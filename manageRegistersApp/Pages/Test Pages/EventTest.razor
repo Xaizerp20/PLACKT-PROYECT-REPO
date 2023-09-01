@@ -1,0 +1,25 @@
+﻿@using manageRegistersApp.Services
+@page "/eventTest";
+@inject IEventService EventService //
+@inject ISnackbar Snackbar
+
+
+<h3>eventTest</h3>
+
+<button @onclick="() => HandleButtonClick(msg)">Presionar botón</button>
+
+
+@code {
+
+
+    private string msg = "boton pulsado desde la otra pagina";
+
+    private void HandleButtonClick(string parameter)
+    {
+        Snackbar.Add("Boton Presionado", Severity.Success);
+
+        Task.Delay(2000);
+
+        EventService.NotifyEvent(parameter);
+    }
+}

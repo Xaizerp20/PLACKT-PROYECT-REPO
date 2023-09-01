@@ -1,0 +1,55 @@
+﻿@using manageRegistersApp.Models;
+@inject ISnackbar Snackbar
+
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="Name" @bind-Value=userEdit.Name></MudTextField>
+        <MudTextField T="string" Label="Password" @bind-Value=userEdit.Password></MudTextField>
+        <MudTextField T="string" Label="Email" @bind-Value=userEdit.Email></MudTextField>
+        <MudSelect T="string" Label="Role" AnchorOrigin="Origin.BottomCenter" @bind-Value=userEdit.Role>
+            <MudSelectItem Value="@("User")" />
+            <MudSelectItem Value="@("Manager")" />
+            <MudSelectItem Value="@("Administrator")" />
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" StartIcon="@Icons.Material.Filled.Cancel">Cancel</MudButton>
+        <MudButton OnClick="EditUser" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+    [Parameter]
+    public User userEdit { get; set; } //parametro para pasar al dialog
+
+
+
+
+    protected override void OnInitialized()
+    {
+
+        base.OnInitialized();
+    }
+
+    //void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Cancel();
+
+
+    private void EditUser()
+    {
+
+        MudDialog.Close(DialogResult.Ok(userEdit)); //retorna el usuario con los datos editados
+
+    }
+
+
+}
+
+
+
+

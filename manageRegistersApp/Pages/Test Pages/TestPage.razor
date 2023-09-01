@@ -1,0 +1,30 @@
+﻿@implements IDisposable
+@inject IEventService EventService //
+@inject ISnackbar Snackbar
+@using manageRegistersApp.Services
+@page "/TestPage"
+
+<h3>testPage</h3>
+        
+        
+<p>Contenido de la otra página</p>
+
+@code {
+    
+
+     protected override void OnInitialized()
+    {
+        EventService.NewEvent += HandleButtonPressed;
+    }
+        
+    private void HandleButtonPressed(string msg)
+    {   
+        Snackbar.Add(msg, Severity.Error);
+    }   
+        
+    public void Dispose()
+    {   
+        EventService.NewEvent -= HandleButtonPressed;
+    }
+
+}

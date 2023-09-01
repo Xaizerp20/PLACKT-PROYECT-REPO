@@ -1,0 +1,354 @@
+﻿@using DataLibrary;
+@using System.ComponentModel.DataAnnotations;
+@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@inject NavigationManager NavManager
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+
+@page "/arrivals/newarrival"
+
+<h3>Register Arrival</h3>
+
+
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid  Class="d-flex justify-center">
+        <MudItem xs="12" md="6" Class="d-flex align-center justify-center mud-width-full py-8">
+            <MudCard>
+                <MudCardContent>
+                    <MudAutocomplete T="string" Label="Number Plate" @bind-Value="model.NumberPlate" SearchFunc="@SearchSavedVehicles"
+                                     ResetValueOnEmptyText="true"
+                                     CoerceValue="true"
+                                     AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary"
+                                          Required
+                                     HelperText="Max. 8 characters"
+                                     For="@(() => model.NumberPlate)"
+                                     />
+
+
+                    <MudSelect T="int" Label="Room" AnchorOrigin="Origin.BottomCenter" @bind-Value=model.NumberRoom For="@(() => model.NumberRoom)" Required >
+                        @foreach (var r in roomList)
+                        {
+                            <MudSelectItem  Value="@(r)" />
+                        }
+                    </MudSelect>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" FullWidth="true" Class="ml-auto" Disabled=@success>
+                        @if (success)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Processing</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Save</MudText>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" md="12">
+            <MudText Class="mb-n3" Typo="Typo.body2">
+                <MudChip>@(model.NumberPlate ?? "Not selected")</MudChip><MudChip>@(model.NumberRoom.ToString() ?? "Not selected")</MudChip>
+                </MudText>
+            </MudItem>
+            <MudItem xs="12" sm="5">
+                <MudPaper Class="pa-4 mud-height-full">
+                    <MudText Typo="Typo.subtitle2">Validation Summary</MudText>
+                    @if (success)
+                {
+                    <MudText Color="Color.Success">Success</MudText>
+                }
+                else
+                {
+                    <MudText Color="@Color.Error">
+                        <ValidationSummary />
+                    </MudText>
+                }
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+
+
+<MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        El vehiculo tiene <b> @PendingIssues.Count() Issues</b> sin resolver
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.DeleteForever">Registrar Ingreso</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+
+@code {
+
+    #region FORM DATA
+    RegisterAccountForm model = new RegisterAccountForm();
+    bool success;
+
+
+    public class RegisterAccountForm
+    {
+        [Required]
+        [StringLength(8, ErrorMessage = "Plate length can't be more than 8.")]
+        [RegularExpression("^[A-Z][A-Z0-9]*$", ErrorMessage = "First letter must be uppercase, followed by uppercase letters or numbers.")]
+        public string NumberPlate { get; set; } = null!;
+
+        [Required]
+        public int NumberRoom { get; set; }
+
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+        await RegisterArrival();
+    }
+    #endregion
+
+
+    [Inject] private IDialogService DialogService { get; set; }
+    string state = "Message box hasn't been opened yet";
+    MudMessageBox mbox { get; set; }
+
+
+    private string? selectNumberPlate;
+    private int selectNumberRoom;
+    private string? value2;
+    private int[] roomList =
+    {
+        1, 2, 3, 4, 5, 6, 7
+    };
+
+    private List<Vehicle> Listvehicles = new List<Vehicle>();
+    private List<Vehicle> foundVehicle = new List<Vehicle>();
+    private List<RegisterArrivals> arrivals; //lista de resultados del query de ingresos
+    private Dictionary<string, int> vehicleOptions = new Dictionary<string, int>();
+    private List<Issue> checkIssues = new List<Issue>();
+    private IEnumerable<Issue> PendingIssues;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Listvehicles = await LoadVehicles();
+    }
+
+    //method to list vehicles saved
+    private async Task<IEnumerable<string>> SearchSavedVehicles(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+
+        // if text is null or empty, don't return values (drop-down will not open)
+        if (string.IsNullOrEmpty(value))
+        {
+            return vehicleOptions.Keys;// Si el valor es nulo o vacío, devuelve una lista vacía
+        }
+
+        return vehicleOptions.Keys.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    //method to list room saved
+    private async Task<IEnumerable<int>> SearchRoomList(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return roomList;
+        return roomList.Where(x => x.ToString().Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    //method to register new arrivals
+    public async Task RegisterArrival()
+    {
+        List<Vehicle> searchVeh = await SearchVehicleByNumber(model.NumberPlate);
+        Vehicle? foundVeh = searchVeh.FirstOrDefault(obj => obj.NumberPlate == model.NumberPlate);
+
+
+        if (searchVeh.Count == 0 || foundVeh == null || foundVeh.NumberPlate != model.NumberPlate)
+        {
+
+            await AddNewVehicle(model.NumberPlate);
+            await LoadVehicles(); //recarga la lista de vehiculos
+            await AddNewArrival(model.NumberRoom, vehicleOptions[model.NumberPlate]);
+            Snackbar.Add("Vehiculo y Registro Agregados Correctamente", Severity.Success);
+
+        }
+
+        else
+        {
+            checkIssues = await SearchIssuesByVehicleId(vehicleOptions[model.NumberPlate]);
+            PendingIssues = checkIssues.Where(i => i.Status == "PENDING");
+
+            if (PendingIssues.Count() == 0)
+            {
+                await AddNewArrival(model.NumberRoom, vehicleOptions[model.NumberPlate]);
+                Snackbar.Add("Registro Agregado Correctamente", Severity.Success);
+            }
+            else
+            {
+
+                bool? result = await mbox.Show();
+                state = result == null ? "Canceled" : "Continue";
+                StateHasChanged();
+
+
+                if (state == "Canceled")
+                {
+                    success = false;
+                    return;
+                }
+                else
+                {
+                    await AddNewArrival(model.NumberRoom, vehicleOptions[model.NumberPlate]);
+                    Snackbar.Add("Registro Agregado Correctamente", Severity.Success);
+                }
+            }
+
+
+        }
+
+        await Task.Delay(2000);
+        ReloadPage(); //recarga los datos en la tabla
+    }
+
+    #region QUERY METHODS
+
+    //query para cargar la lista de vehiculos //usada
+    private async Task<List<Vehicle>> LoadVehicles()
+    {
+
+        List<Vehicle> Listvehicles = new List<Vehicle>();
+
+        string sql = "select * from vehicles";
+        Listvehicles = await _data.LoadData<Vehicle, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+
+        foreach (var v in Listvehicles)
+        {
+            if (!vehicleOptions.ContainsKey(v.NumberPlate))
+            {
+                vehicleOptions.Add(v.NumberPlate, v.id);
+            }
+            else
+            {
+                continue;
+            }
+        }
+
+        return Listvehicles;
+    }
+
+    //query para buscar los vehiculos mediante el ID
+    public async Task<List<Vehicle>> SearchVehicleById(int _id)
+    {
+        try
+        {
+            string sql = "SELECT * FROM vehicles WHERE id = @id;";
+            return foundVehicle = await _data.LoadData<Vehicle, dynamic>(sql, new { id = @_id }, _config.GetConnectionString("default"));
+        }
+
+        catch(Exception e)
+        {
+            Console.WriteLine($"Hubo un error al hacer la consulta: {e.Message}");
+            return null;
+        }
+
+
+    }
+
+    //query busca los vehiculos mediante la placa //usada
+    public async Task<List<Vehicle>> SearchVehicleByNumber(string _NumberPlate)
+    {
+        try
+        {
+            string sql = "SELECT * FROM vehicles WHERE NumberPlate = @NumberPlate;";
+            return foundVehicle = await _data.LoadData<Vehicle, dynamic>(sql, new { NumberPlate = @_NumberPlate }, _config.GetConnectionString("default"));
+        }
+
+        catch(Exception e)
+        {
+            Console.WriteLine($"Hubo un error al hacer la consulta: {e.Message}");
+            return null;
+        }
+    }
+
+    //query para comprobar si el vehiculo tiene Issues pendientes
+    public async Task<List<Issue>> SearchIssuesByVehicleId(int id_vehicle)
+    {
+        try
+        {
+            string sql = "SELECT * FROM issues WHERE vehicle_Id = @vehicle_Id AND Status = 'PENDING';";
+            return await _data.LoadData<Issue, dynamic>(sql, new { vehicle_Id = @id_vehicle }, _config.GetConnectionString("default"));
+        }
+
+        catch(Exception e)
+        {
+            Console.WriteLine($"Hubo un error al hacer la consulta: {e.Message}");
+            return null;
+        }
+    }
+
+    //query para agregar nuevo vehiculo //usada
+    public async Task<bool> AddNewVehicle(string _NumberPlate)
+    {
+
+        try
+        {
+            string sql = "INSERT INTO vehicles (NumberPlate) VALUES (@NumberPlate);";
+            int rowsAffected = await _data.SaveData(sql, new { NumberPlate = _NumberPlate }, _config.GetConnectionString("default"));
+
+            return rowsAffected > 0;
+        }
+
+        catch (Exception e)
+        {
+            Console.WriteLine($"Hubo un error al guardar los datos: {e.Message}");
+            return false;
+        }
+
+
+
+    }
+
+    //query agregar nuevo ingreso
+    public async Task<bool> AddNewArrival(int _room, int _id_vehicle)
+    {
+        try
+        {
+            string sql = "INSERT INTO registerarrivals (room, date, id_vehicle) VALUES (@room, @date, @id_vehicle);";
+            int rowsAffected =  await _data.SaveData(sql, new { room = _room, date = DateTime.Now, id_vehicle = _id_vehicle }, _config.GetConnectionString("default"));
+            return rowsAffected > 0;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Hubo un error al guardar los datos: {e.Message}");
+            return false;
+        }
+
+    }
+
+    #endregion
+
+    #region GENERIC METHODS
+
+    //recargar pagina
+    private void ReloadPage()
+    {
+        NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
+    }
+
+    //alerts
+    public async Task ShowAlert(string msg)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", msg);
+    }
+
+    #endregion
+}

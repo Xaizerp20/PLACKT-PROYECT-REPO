@@ -1,0 +1,38 @@
+﻿body
+{
+    margin:auto;
+}
+
+
+.registers-container{
+    display:flex;
+    justify-content:space-evenly;
+
+}
+
+.register-vehicle {
+    display: flex;
+    width: 30%;
+    min-width: 300px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
+    border-radius: 10px;
+    margin: 5px;
+    gap: 10px;
+}
+
+.add-issue {
+    display: flex;
+    width: 30%;
+    min-width: 300px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-shadow: rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
+    border-radius: 10px;
+    margin: 5px;
+    gap: 10px;
+}
+

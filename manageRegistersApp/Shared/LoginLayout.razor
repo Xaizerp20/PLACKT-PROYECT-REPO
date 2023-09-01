@@ -1,0 +1,57 @@
+﻿@inject IJSRuntime JSRuntime
+<!-- Login Layout -->
+
+<div class="w-100 d-flex justify-content-center">
+    <MudPaper Class="pa-16 ma-2 d-flex flex-column align-center w-50" Elevation="25" Square="true">
+        <MudImage Src="https://ps.w.org/login-customizer/assets/icon-256x256.png?rev=2455454" Alt="Mony the dog" Elevation="30" Width="200" Height="200" Class="rounded-lg" />
+        <MudText Typo="Typo.h4" Class="mt-4">Log In</MudText>
+        <MudTextField @bind-Value="Username" Label="Username" Variant="Variant.Outlined" Class="d- mt-4" FullWidth=true Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"></MudTextField>
+        <MudTextField @bind-Value="Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" Class="mt-4" FullWidth=true />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mud-theme-primary py-4 px-6 mx-4 rounded-xl mt-4" FullWidth=true @onclick=Login>Iniciar Sesion</MudButton>
+        <MudText Align="Align.Start" Style="@($"color:{Theme.Palette.Primary}")" Class="mt-4 text-decoration-none align-self-end"><b><MudLink Href="#">Forgot your password?</MudLink></b></MudText>
+    </MudPaper>
+</div>
+
+
+
+
+@code {
+    private MudTheme Theme = new MudTheme();
+
+    [Parameter]
+    public string Password { get; set; } = "superstrong123";
+    [Parameter]
+    public string Username { get; set; } = "superstrong123";
+
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void ButtonTestclick()
+    {
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+
+    private async void Login()
+    {
+        
+    }
+
+    public async Task ShowAlert(string msg)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", msg);
+    }
+}
+

@@ -1,0 +1,62 @@
+﻿@using manageRegistersApp.Models
+@using manageRegistersApp.Services
+@using DataLibrary
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject ShiftService shiftService
+
+<MudDialog>
+    <DialogContent>
+        <MudTimePicker Label="Inicio" AmPm="true" @bind-Time="timeStart" />
+        <MudTimePicker Label="Fin" AmPm="true" TimeFormat="h:mm tt" @bind-Time="timeEnd" />
+        <MudSelect T="string" Label="Horario" AnchorOrigin="Origin.BottomCenter" @bind-Value=Horario>
+            <MudSelectItem Value="@("Matutino")" />
+            <MudSelectItem Value="@("Tarde")" />
+            <MudSelectItem Value="@("Noche")" />
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancelar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string? clientId { get; set; }
+
+    TimeSpan? timeStart = new TimeSpan(00, 45, 00);
+    TimeSpan? timeEnd = new TimeSpan(00, 45, 00);
+    public string Horario = null!;
+
+    void Cancel() => MudDialog.Cancel();
+
+    public async Task Save()
+    {
+
+
+        bool checkQuery = await shiftService.CreateShift(timeStart, timeEnd, Horario, int.Parse(clientId));
+
+        if (checkQuery)
+        {
+           
+            DialogResult.Ok(true);
+        }
+        else
+        {
+            Snackbar.Add("Error al agregar el turno", Severity.Success);
+            DialogResult.Ok(false);
+        }
+
+        MudDialog.Close();
+    }
+
+}

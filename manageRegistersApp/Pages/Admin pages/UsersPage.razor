@@ -1,0 +1,212 @@
+﻿@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@using System.Net.Http.Json
+@using BCrypt.Net
+@using System.Security.Claims
+@using DataLibrary
+@using manageRegistersApp.Services;
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject UserService userService
+
+
+
+@page "/admin/users"
+@attribute [Authorize(Roles = "Administrator")]
+
+<h3>Users</h3>
+
+@if (users == null)
+{
+    <p><em>Loading...</em></p>
+    <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+}
+else
+{
+    <MudFab @onclick="@(()=>AddUser())" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+    <br />
+    <MudTable Elevation="25" Items="@users" Filter="new Func<User,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Users</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Search for Users..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+             <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x=>x.Password)">Password</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x=>x.Email)">Email</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x=>x.Role)">Role</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<User, object>(x=>x.User_State)">Estado</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+            <MudTd DataLabel="Password">@context.Password</MudTd>
+            <MudTd DataLabel="Email">@context.Email</MudTd>
+            <MudTd DataLabel="Role">@context.Role</MudTd>
+            <MudTd DataLabel="Estado">
+                <MudToggleIconButton ToggledChanged="args => ChangeUserStatus(context.Id, args)"
+                                     Icon="@Icons.Material.Filled.Circle" Color="@Color.Error" Title="Inactivo" Size="Size.Medium"
+                                     ToggledIcon="@Icons.Material.Filled.Circle" ToggledColor="@Color.Success" ToggledTitle="Activo" ToggledSize="Size.Medium"
+                                     Toggled="@context.User_State" />
+            </MudTd>
+            <MudTd DataLabel="">
+                <MudFab @onclick="@(()=>EditUser(@context.Id))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<User>? users;
+    private string? searchString;
+
+    private User selectedItem1 = null;
+    private HashSet<User> selectedItems = new HashSet<User>();
+    private IEnumerable<User> Elements = new List<User>();
+
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+    private AuthenticationState authState;
+
+    //Load inital Data
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await authenticationState;
+
+        if (!authState.User.IsInRole("Administrator")) // Verificar si el usuario tiene acceso
+        {
+            NavManager.NavigateTo("/error");
+        }
+
+        else
+        {
+            users = await userService.GetUsersAsync();
+        }
+
+
+        /* IMPLEMENTAR EN CASO DE QUE EL MANAGER TAMBIEN PUEDA MANEJAR USUARIOS
+        if (authState.User.IsInRole("Manager"))
+        {
+            users = users.FindAll(u => u.Role != "Administrator");
+        }
+        */
+
+    }
+
+    #region FILTERS METHODS
+
+    private bool FilterFunc1(User element) => FilterFunc(element, searchString);
+
+    private bool FilterFunc(User element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Name.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Role.ToString().Contains(searchString))
+            return true;
+
+        if (searchString == "Activo" || searchString == "activo")
+        {
+            searchString = true.ToString();
+        }
+        else if (searchString == "Inactivo" || searchString == "inactivo")
+        {
+            searchString = false.ToString();
+        }
+
+        if (element.User_State.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    #endregion
+
+    #region CRUD METHODS
+
+    //AGREGAR USUARIO
+    public void AddUser()
+    {
+        NavManager.NavigateTo("/admin/users/newuser");
+    }
+
+
+
+
+    //EDITAR USUARIO
+    public async Task EditUser(int id)
+    {
+
+        User? userFind = users.FirstOrDefault(obj => obj.Id == id); //busca el usuario mediante el id
+
+        User UserEdited = await OpenDialogEditer(userFind); //abre una caja para editar el usuario y retorna el nuevo usuario editado
+
+        if (UserEdited != null && UserEdited.Id == userFind.Id) //Comprueba si se edito el usuario
+        {
+            bool updateSuccessful = await userService.UpdateUser(UserEdited); //actualizar usuario
+     
+            Snackbar.Add(updateSuccessful ? "Usuario Editado Correctamente" : "Error al Editar el Usuario", updateSuccessful ? Severity.Success : Severity.Error);
+        }
+        else
+        {
+            Snackbar.Add("Edicion Cancelada", Severity.Info);
+        }
+        StateHasChanged();
+    }
+
+
+
+    //ACTUALIZAR ESTADO DEL USUARIO
+    public async void ChangeUserStatus(int id, bool toggled)
+    {
+
+        bool updateSuccessful = await userService.UpdateUserStateAsync(id, toggled); //actualiza el usuario
+        Snackbar.Add(updateSuccessful ? "El estado del usuario fue cambiado exitosamente" : "Error al cambiar el estado del usuario", updateSuccessful ? Severity.Success : Severity.Error);
+
+        await refreshPage();
+        StateHasChanged();
+    }
+
+
+    //ventana emergente para editar usuario
+    public async Task<User> OpenDialogEditer(User editUser)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("userEdit", editUser); //pasa el usuario a editar como parametro para el dialog
+
+        var dialog = await DialogService.ShowAsync<DialogUser>("Edit User", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            User? user = result.Data as User; //datos del usuario ya editado
+            return user;
+        }
+
+        else
+        {
+            return null;
+        }
+    }
+
+
+
+    #endregion
+
+
+    public async Task refreshPage()
+    {
+        await OnInitializedAsync();
+
+    }
+
+}
+

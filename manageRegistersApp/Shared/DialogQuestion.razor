@@ -1,0 +1,62 @@
+﻿@using manageRegistersApp.Models
+@inject IDialogService DialogService
+
+<MudDialog>
+    <DialogContent>
+       
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Continuar</MudButton>
+        <MudButton Color="Color.Primary" OnClick="OpenDialogAddIssue">Agregar Issue</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string _NumberPlate { get; set; } //parametro para pasar al dialog
+
+    [Parameter]
+    public int ClientId{ get; set; } //Id del cliente
+
+    protected override void OnInitialized()
+    {
+
+        base.OnInitialized();
+        Console.WriteLine(_NumberPlate);
+    }
+
+   
+
+    void Cancel() => MudDialog.Cancel();
+
+
+
+    public async Task<Issue> OpenDialogAddIssue()
+    {
+  
+        var parameters = new DialogParameters();
+        parameters.Add("_NumberPlate", _NumberPlate); //pasa el usuario a editar como parametro para el dialog
+
+        var options = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true, NoHeader = true };
+        var dialog = await DialogService.ShowAsync<DialogCreateIssue>("", parameters, options);
+        var result = await dialog.Result;
+
+
+
+        if (!result.Canceled)
+        {
+            Issue? issue = result.Data as Issue; //datos del usuario ya creado
+            //await refreshPage();
+            return issue;
+        }
+
+        else
+        {
+            return null;
+        }
+
+
+    }
+}

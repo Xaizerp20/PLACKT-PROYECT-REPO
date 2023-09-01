@@ -1,0 +1,38 @@
+﻿@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager NavManager
+@using System.Security.Claims;
+@page "/"
+
+<h3>IndexRedirect</h3>
+
+@code {
+    [Parameter]
+    public string? clientName { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+
+    AuthenticationState? authState;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            authState = await authenticationState;
+
+            var clientName = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value;
+
+
+            if (authState.User.Identity.IsAuthenticated)
+            {
+                NavManager.NavigateTo($"./{clientName}");
+            }
+            else
+            {
+                NavManager.NavigateTo("./login");
+            }
+        }
+    }
+}

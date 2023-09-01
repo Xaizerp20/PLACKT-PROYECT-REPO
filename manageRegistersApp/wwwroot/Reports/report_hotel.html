@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Hotel</title>
+
+    <style>
+      /* Estilos generales */
+
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+        padding: 0;
+        height: max-content;
+      }
+
+      h2 {
+        font-size: 2em;
+        margin-top: 0;
+        text-align: center;
+      }
+
+      header{
+        font-size: 2em;
+        text-align: center;
+        background-color: black;
+        color: rgb(255, 166, 0);
+        padding: 10px;
+        font-weight: bold;
+
+      }
+
+      /* Estilos para las tablas */
+
+      table.default {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 0 auto;
+        width: 100%;
+        table-layout: auto;
+      }
+
+      table.default th,
+      table.default td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        text-align: center;
+        width: 25%;
+      }
+
+      table.default th {
+        background-color: #f2f2f2;
+        font-size: 1.5em;
+      }
+
+      table.default tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      /* Estilos para los divs contenedores */
+
+      div {
+        margin-bottom: 20px;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+      }
+
+      div:first-child {
+        margin-top: 0;
+      }
+
+      div:last-child {
+        margin-bottom: 0;
+      }
+
+
+      .last-div {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+      }
+      
+      table.last-table {
+        width: 100%;
+        table-layout: fixed;
+      }
+      
+      table.last-table th,
+      table.last-table td {
+        width: calc(100% / 9);
+        box-sizing: border-box;
+      }
+      
+      table.last-table th:first-child,
+      table.last-table td:first-child {
+        width: auto;
+      }
+
+      footer {
+        background-color: #333;
+        color: #ff8000;
+        padding: 20px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        font-family: sans-serif;
+        justify-content: space-between;
+      }
+      
+      footer p {
+        margin: 0;
+        font-size: 2.5em;
+      }
+
+      .footer-container{
+        display: flex;
+        background-color: transparent;
+        gap: 10px;
+      }
+      .footer-info{
+        width: 50%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+      }
+      .footer-container p{
+        font-weight: bold;
+        font-size: large;
+      }
+      .footer-container span{
+        color: #333;
+        font-size: large;
+        font-weight: bold;
+      }
+      
+
+    </style>
+  </head>
+  <body>
+    <header>REPORT HOTEL MANICATO</header>
+    <div>
+      <table class="default">
+        <thead>
+          <tr>
+            <th>Number Plate</th>
+            <th>Room</th>
+            <th>Fecha y Hora</th>
+          </tr>
+        </thead>
+       <tbody><tr><td>Q969253</td><td>1</td><td>5/27/2023 4:37:15 PM</td></tr><tr><td>4545454</td><td>2</td><td>5/27/2023 4:40:14 PM</td></tr><tr><td>4545454</td><td>3</td><td>5/27/2023 4:57:56 PM</td></tr><tr><td>4545454</td><td>1</td><td>5/27/2023 4:59:53 PM</td></tr><tr><td>4545454</td><td>2</td><td>5/27/2023 5:00:44 PM</td></tr><tr><td>4545454</td><td>2</td><td>5/27/2023 5:06:45 PM</td></tr><tr><td>4545454</td><td>3</td><td>5/27/2023 5:07:45 PM</td></tr><tr><td>4545454</td><td>3</td><td>5/29/2023 10:10:00 PM</td></tr><tr><td>V425737</td><td>1</td><td>5/29/2023 10:26:29 PM</td></tr><tr><td>Z483218</td><td>3</td><td>5/29/2023 10:29:35 PM</td></tr><tr><td>4545454</td><td>4</td><td>5/29/2023 10:30:07 PM</td></tr><tr><td>X584178</td><td>4</td><td>5/29/2023 10:34:03 PM</td></tr><tr><td>P066185</td><td>3</td><td>5/29/2023 10:43:01 PM</td></tr><tr><td>F494153</td><td>4</td><td>5/29/2023 10:48:14 PM</td></tr><tr><td>X584178</td><td>4</td><td>5/29/2023 10:50:59 PM</td></tr><tr><td>V425737</td><td>6</td><td>5/29/2023 10:51:47 PM</td></tr><tr><td>F376118</td><td>5</td><td>5/29/2023 11:19:34 PM</td></tr><tr><td>4545454</td><td>7</td><td>5/30/2023 12:11:11 AM</td></tr><tr><td>V562511</td><td>4</td><td>5/30/2023 12:11:32 AM</td></tr><tr><td>V425737</td><td>2</td><td>5/30/2023 12:13:41 AM</td></tr><tr><td>F376118</td><td>4</td><td>5/30/2023 12:19:12 AM</td></tr><tr><td>4545454</td><td>3</td><td>5/30/2023 12:29:43 AM</td></tr><tr><td>V425737</td><td>3</td><td>5/30/2023 12:30:03 AM</td></tr><tr><td>K240335</td><td>5</td><td>5/30/2023 12:31:21 AM</td></tr><tr><td>D536972</td><td>0</td><td>5/30/2023 1:46:21 PM</td></tr><tr><td>X589693</td><td>0</td><td>5/30/2023 2:15:47 PM</td></tr><tr><td>X584178</td><td>4</td><td>5/30/2023 7:57:12 PM</td></tr><tr><td>X584178</td><td>6</td><td>5/30/2023 7:57:43 PM</td></tr><tr><td>X584178</td><td>3</td><td>5/30/2023 8:32:44 PM</td></tr><tr><td>X584178</td><td>4</td><td>5/30/2023 8:34:42 PM</td></tr><tr><td>X584178</td><td>2</td><td>5/30/2023 8:35:14 PM</td></tr><tr><td>X584178</td><td>3</td><td>5/30/2023 8:36:07 PM</td></tr><tr><td>X584178</td><td>3</td><td>5/30/2023 8:42:11 PM</td></tr><tr><td>X584178</td><td>2</td><td>5/30/2023 8:45:10 PM</td></tr><tr><td>Q969253</td><td>3</td><td>5/30/2023 9:02:24 PM</td></tr><tr><td>4545454</td><td>1</td><td>6/1/2023 5:05:31 PM</td></tr><tr><td>X584178</td><td>2</td><td>6/1/2023 5:22:59 PM</td></tr><tr><td>E784451</td><td>3</td><td>6/1/2023 5:44:52 PM</td></tr><tr><td>X584178</td><td>3</td><td>6/1/2023 6:16:24 PM</td></tr><tr><td>X584178</td><td>3</td><td>6/1/2023 6:20:54 PM</td></tr><tr><td>X584178</td><td>3</td><td>6/1/2023 6:22:03 PM</td></tr><tr><td>X584178</td><td>3</td><td>6/1/2023 6:22:21 PM</td></tr><tr><td>L690179</td><td>5</td><td>6/1/2023 6:36:14 PM</td></tr><tr><td>X584178</td><td>4</td><td>6/1/2023 6:51:27 PM</td></tr><tr><td>F78</td><td>6</td><td>6/6/2023 12:11:08 PM</td></tr><tr><td>F76</td><td>2</td><td>6/6/2023 12:42:56 PM</td></tr><tr><td>45455424012234534564534</td><td>0</td><td>6/6/2023 1:28:16 PM</td></tr><tr><td>ddd4464324504040/44</td><td>0</td><td>6/6/2023 1:28:33 PM</td></tr><tr><td>A54512SDS</td><td>0</td><td>6/6/2023 1:47:26 PM</td></tr><tr><td>dgdgfbbdfbfvdfsgsdfgsdfdzfsf</td><td>2</td><td>6/6/2023 2:18:39 PM</td></tr><tr><td>dssfsdfdsfsdf</td><td>3</td><td>6/6/2023 2:19:44 PM</td></tr><tr><td>adsdsadasdas</td><td>2</td><td>6/6/2023 2:33:06 PM</td></tr><tr><td>sfsffdsfdsfsd</td><td>3</td><td>6/6/2023 2:35:04 PM</td></tr><tr><td>dfggfsgsdgs</td><td>3</td><td>6/6/2023 2:35:49 PM</td></tr><tr><td>45424242</td><td>2</td><td>6/6/2023 3:20:40 PM</td></tr><tr><td>ewrfesfsefsfsd</td><td>2</td><td>6/6/2023 3:22:35 PM</td></tr><tr><td>fxvxvxvdvd</td><td>3</td><td>6/6/2023 3:23:26 PM</td></tr><tr><td>dasdsadacascscs</td><td>1</td><td>6/6/2023 3:40:51 PM</td></tr><tr><td>aszcscsacasc</td><td>3</td><td>6/6/2023 3:42:17 PM</td></tr><tr><td>fdgdfgdfgdfg</td><td>2</td><td>6/6/2023 3:44:16 PM</td></tr><tr><td>sadasdasdasdasd</td><td>1</td><td>6/6/2023 3:46:22 PM</td></tr><tr><td>sfdsfsdfsdfsd</td><td>2</td><td>6/6/2023 3:59:34 PM</td></tr><tr><td>dsadadascsascsac</td><td>2</td><td>6/6/2023 4:03:19 PM</td></tr><tr><td>aSasXXxXddsfc</td><td>2</td><td>6/6/2023 4:06:14 PM</td></tr><tr><td>ASssaXAAdcsfef</td><td>2</td><td>6/6/2023 4:10:30 PM</td></tr><tr><td>axaxxXX</td><td>3</td><td>6/6/2023 4:15:38 PM</td></tr><tr><td>sdsjdfasjfasnlfnlkasf</td><td>2</td><td>6/6/2023 4:21:13 PM</td></tr><tr><td>1234</td><td>2</td><td>6/6/2023 4:33:17 PM</td></tr><tr><td>ffdfdsdvdfg</td><td>1</td><td>6/6/2023 4:34:51 PM</td></tr><tr><td>dfdgfdgdfg</td><td>2</td><td>6/6/2023 4:35:05 PM</td></tr><tr><td>dfdfdsfdsfdsfff</td><td>1</td><td>6/6/2023 4:35:36 PM</td></tr><tr><td>hhjuiuyiuyjyyh</td><td>4</td><td>6/6/2023 4:35:43 PM</td></tr><tr><td>sfdsfsdfsdf</td><td>3</td><td>6/6/2023 4:36:16 PM</td></tr><tr><td>ssdsdasd</td><td>2</td><td>6/6/2023 4:42:01 PM</td></tr><tr><td>sxs</td><td>0</td><td>6/6/2023 5:13:55 PM</td></tr><tr><td>aZasaZAz</td><td>2</td><td>6/6/2023 6:26:46 PM</td></tr><tr><td>sdsadsadas</td><td>1</td><td>6/6/2023 6:28:37 PM</td></tr><tr><td>sdasdascsacsavsdf</td><td>5</td><td>6/6/2023 6:39:51 PM</td></tr><tr><td>Shsjdjej</td><td>3</td><td>6/6/2023 9:35:28 PM</td></tr><tr><td>124224543</td><td>2</td><td>6/12/2023 6:10:16 PM</td></tr><tr><td>ssdsadascs</td><td>1</td><td>6/13/2023 4:11:54 PM</td></tr><tr><td>asaxaxasad</td><td>2</td><td>6/13/2023 6:10:53 PM</td></tr><tr><td>vehiculotest</td><td>2</td><td>6/14/2023 3:52:26 PM</td></tr><tr><td>vehiculotest</td><td>1</td><td>6/14/2023 3:56:35 PM</td></tr><tr><td>vehicleTest</td><td>0</td><td>6/14/2023 3:59:21 PM</td></tr><tr><td>vehicleTest</td><td>3</td><td>6/14/2023 4:00:13 PM</td></tr><tr><td>vehicleTest</td><td>0</td><td>6/14/2023 4:06:48 PM</td></tr><tr><td>vehicleTest</td><td>1</td><td>6/14/2023 6:56:52 PM</td></tr><tr><td>sdsdsdascsac</td><td>3</td><td>6/14/2023 7:08:28 PM</td></tr><tr><td>dsdascccss</td><td>0</td><td>6/14/2023 7:22:34 PM</td></tr><tr><td>vehicleTest</td><td>0</td><td>6/14/2023 7:43:44 PM</td></tr><tr><td>vehicleTest</td><td>0</td><td>6/14/2023 7:44:19 PM</td></tr><tr><td>Rrhhb</td><td>1</td><td>6/15/2023 2:04:02 PM</td></tr><tr><td>Vvvmmu</td><td>2</td><td>6/15/2023 2:06:42 PM</td></tr><tr><td>Dggv</td><td>2</td><td>6/19/2023 12:30:27 PM</td></tr><tr><td>Dffss</td><td>2</td><td>6/19/2023 8:14:46 PM</td></tr><tr><td>Sfbed</td><td>4</td><td>6/19/2023 8:49:42 PM</td></tr><tr><td>ZXZXZXZ</td><td>2</td><td>6/20/2023 2:13:01 PM</td></tr><tr><td>cccd</td><td>0</td><td>6/20/2023 2:14:14 PM</td></tr><tr><td>Tfu---</td><td>6</td><td>6/20/2023 4:56:01 PM</td></tr><tr><td>sddsdsd</td><td>4</td><td>6/20/2023 5:17:39 PM</td></tr><tr><td>fdfdfdf</td><td>3</td><td>6/21/2023 12:57:44 PM</td></tr></tbody>
+      </table>
+    </div>
+    
+    <footer>
+      <p>SISTEMA MONITOR 4 BY MANICATO GROUP</p>
+      
+      <div class="footer-container">
+        <div class="footer-info">
+          <p>tel:</p>
+          <span> (809) 373-1370</span>
+        </div>
+  
+       <div class="footer-info">
+        <p>Email:</p>
+        <span>info@manicatogroup.com</span>
+       </div>
+      </div>
+     
+
+    </footer>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

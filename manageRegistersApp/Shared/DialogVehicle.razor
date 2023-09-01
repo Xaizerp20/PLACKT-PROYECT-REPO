@@ -1,0 +1,45 @@
+﻿@using manageRegistersApp.Models;
+@inject ISnackbar Snackbar
+
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="Number Plate" @bind-Value=vehicleEdit.NumberPlate></MudTextField>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" StartIcon="@Icons.Material.Filled.Cancel">Cancel</MudButton>
+        <MudButton OnClick="EditVehicle" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+    [Parameter]
+    public Vehicle vehicleEdit { get; set; } //parametro para pasar al dialog
+
+
+    protected override void OnInitialized()
+    {
+
+        base.OnInitialized();
+    }
+
+    private void EditVehicle()
+    {
+
+        MudDialog.Close(DialogResult.Ok(vehicleEdit)); //retorna el usuario con los datos editados
+
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+   
+
+
+}
+
+
+

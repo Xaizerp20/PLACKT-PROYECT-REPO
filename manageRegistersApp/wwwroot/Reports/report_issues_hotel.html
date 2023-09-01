@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Hotel</title>
+
+    <style>
+      /* Estilos generales */
+
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+        padding: 0;
+        height: max-content;
+      }
+
+      h2 {
+        font-size: 2em;
+        margin-top: 0;
+        text-align: center;
+      }
+
+      header{
+        font-size: 2em;
+        text-align: center;
+        background-color: black;
+        color: rgb(255, 166, 0);
+        padding: 10px;
+        font-weight: bold;
+
+      }
+
+      /* Estilos para las tablas */
+
+      table.default {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 0 auto;
+        width: 100%;
+        table-layout: auto;
+      }
+
+      table.default th,
+      table.default td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        text-align: center;
+        width: 25%;
+      }
+
+      table.default th {
+        background-color: #f2f2f2;
+        font-size: 1.5em;
+      }
+
+      table.default tr:hover {
+        background-color: #f9f9f9;
+      }
+
+      /* Estilos para los divs contenedores */
+
+      div {
+        margin-bottom: 20px;
+        padding: 20px;
+        background-color: #fff;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+      }
+
+      div:first-child {
+        margin-top: 0;
+      }
+
+      div:last-child {
+        margin-bottom: 0;
+      }
+
+
+      .last-div {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+      }
+      
+      table.last-table {
+        width: 100%;
+        table-layout: fixed;
+      }
+      
+      table.last-table th,
+      table.last-table td {
+        width: calc(100% / 9);
+        box-sizing: border-box;
+      }
+      
+      table.last-table th:first-child,
+      table.last-table td:first-child {
+        width: auto;
+      }
+
+      footer {
+        background-color: #333;
+        color: #ff8000;
+        padding: 20px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        font-family: sans-serif;
+        justify-content: space-between;
+      }
+      
+      footer p {
+        margin: 0;
+        font-size: 2.5em;
+      }
+
+      .footer-container{
+        display: flex;
+        background-color: transparent;
+        gap: 10px;
+      }
+      .footer-info{
+        width: 50%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+      }
+      .footer-container p{
+        font-weight: bold;
+        font-size: large;
+      }
+      .footer-container span{
+        color: #333;
+        font-size: large;
+        font-weight: bold;
+      }
+      
+
+    </style>
+  </head>
+  <body>
+    <header>REPORT DE ISSUES HOTEL MANICATO</header>
+    <div>
+      <h2>Pendientes</h2>
+      <table class="default" id="pending">
+        <thead>
+          <tr>
+            <th>Number Plate</th>
+            <th>Tipo de Issue</th>
+            <th>Fecha de Apertura</th>
+            <th>Descripcion</th>
+          </tr>
+        </thead>
+       <tbody><tr><td>Q969253</td><td>Daños</td><td>6/1/2023 12:38:15 PM</td><td></td></tr></tbody>
+      </table>
+    </div>
+    <div>
+      <h2>Resueltos</h2>
+      <table class="default" id="resolve">
+        <thead>
+          <tr>
+            <th>Number Plate</th>
+            <th>Tipo de Issue</th>
+            <th>Fecha de Apertura</th>
+            <th>Descripcion</th>
+            <th>Fecha de Resolucion</th>
+          </tr>
+        </thead>
+       <tbody><tr><td>4545454</td><td>Robo</td><td>5/30/2023 2:08:05 AM</td><td>EL CLIENTE SE LLEVO EL MOUSE DE LA HABITACION</td><td>5/30/2023 5:38:54 PM</td></tr><tr><td>4545454</td><td>Robo</td><td>5/30/2023 2:20:15 AM</td><td>EL CLIENTE SE LLEVO EL MOUSE DE LA HABITACION</td><td>5/30/2023 6:42:08 PM</td></tr><tr><td>V425737</td><td>Perdida</td><td>5/30/2023 4:11:42 PM</td><td>El cliente dejo su celular en la habitacion </td><td>5/30/2023 6:43:07 PM</td></tr><tr><td>X584178</td><td>Daños</td><td>5/30/2023 6:43:39 PM</td><td>el cliente dano una mesa</td><td>5/30/2023 6:44:05 PM</td></tr><tr><td>V425737</td><td>Robo</td><td>5/30/2023 6:44:35 PM</td><td>el cliente se robo una silla </td><td>5/30/2023 6:44:47 PM</td></tr><tr><td>E784451</td><td>Robo</td><td>5/30/2023 7:03:23 PM</td><td>El cliente se robo una mesa</td><td>5/30/2023 7:03:28 PM</td></tr><tr><td>F376118</td><td>Perdida</td><td>5/30/2023 7:58:49 PM</td><td></td><td>5/30/2023 8:01:05 PM</td></tr><tr><td>V425737</td><td>Otros</td><td>5/30/2023 8:00:43 PM</td><td></td><td>5/30/2023 8:00:57 PM</td></tr><tr><td>X584178</td><td>Perdida</td><td>5/30/2023 8:13:11 PM</td><td></td><td>6/1/2023 6:58:30 PM</td></tr><tr><td>V425737</td><td>Otros</td><td>6/1/2023 12:39:05 PM</td><td></td><td>6/14/2023 2:17:57 PM</td></tr><tr><td>Q969253</td><td>Daños</td><td>6/1/2023 12:48:58 PM</td><td></td><td>6/14/2023 2:17:50 PM</td></tr><tr><td>X584178</td><td>Perdida</td><td>6/1/2023 12:54:42 PM</td><td></td><td>6/1/2023 8:21:04 PM</td></tr><tr><td>F888634</td><td>Otros</td><td>6/1/2023 12:55:07 PM</td><td></td><td>6/14/2023 2:17:48 PM</td></tr><tr><td>F888634</td><td>Daños</td><td>6/1/2023 1:00:46 PM</td><td></td><td>6/14/2023 2:17:47 PM</td></tr><tr><td>X584178</td><td>Perdida</td><td>6/1/2023 1:05:28 PM</td><td></td><td>6/14/2023 2:17:45 PM</td></tr><tr><td>F376118</td><td>Robo</td><td>6/1/2023 6:46:32 PM</td><td></td><td>6/14/2023 2:17:44 PM</td></tr><tr><td>V425737</td><td>Perdida</td><td>6/5/2023 8:00:08 PM</td><td></td><td>6/5/2023 8:12:12 PM</td></tr><tr><td>4545454</td><td>Perdida</td><td>6/5/2023 8:05:14 PM</td><td></td><td>6/5/2023 8:11:41 PM</td></tr><tr><td>4545454</td><td>Daños</td><td>6/5/2023 8:05:31 PM</td><td></td><td>6/5/2023 8:10:56 PM</td></tr><tr><td>V425737</td><td>Perdida</td><td>6/5/2023 8:06:09 PM</td><td></td><td>6/5/2023 8:10:44 PM</td></tr><tr><td>X584178</td><td>Daños</td><td>6/5/2023 8:09:13 PM</td><td>ROBO DE DETERGENTE
+</td><td>6/5/2023 8:09:20 PM</td></tr><tr><td>V425737</td><td>Daños</td><td>6/5/2023 8:12:42 PM</td><td></td><td>6/5/2023 8:14:48 PM</td></tr><tr><td>X584178</td><td>Daños</td><td>6/5/2023 8:12:53 PM</td><td></td><td>6/5/2023 8:12:59 PM</td></tr><tr><td>Q969253</td><td>Perdida</td><td>6/5/2023 8:14:42 PM</td><td></td><td>6/5/2023 9:03:04 PM</td></tr><tr><td>F888634</td><td>Robo</td><td>6/6/2023 3:44:42 PM</td><td>nose</td><td>6/14/2023 2:16:46 PM</td></tr><tr><td>Q969253</td><td>Robo</td><td>6/6/2023 3:46:45 PM</td><td>csdf</td><td>6/14/2023 2:16:43 PM</td></tr><tr><td>axaxxXX</td><td>Perdida</td><td>6/6/2023 4:19:07 PM</td><td>xfdfd</td><td>6/14/2023 2:16:36 PM</td></tr><tr><td>sdsjdfasjfasnlfnlkasf</td><td>Perdida</td><td>6/6/2023 4:21:52 PM</td><td>sabra dios
+</td><td>6/6/2023 5:25:06 PM</td></tr><tr><td>1234</td><td>Robo</td><td>6/6/2023 4:34:01 PM</td><td>aja</td><td>6/6/2023 4:38:33 PM</td></tr><tr><td>dfdgfdgdfg</td><td>Perdida</td><td>6/6/2023 4:35:14 PM</td><td>rgfdgfdg</td><td>6/6/2023 4:38:31 PM</td></tr><tr><td>dfdfdsfdsfdsfff</td><td>Daños</td><td>6/6/2023 4:35:54 PM</td><td>ghgfhgfh</td><td>6/6/2023 4:38:29 PM</td></tr><tr><td>sfdsfsdfsdf</td><td>Perdida</td><td>6/6/2023 4:36:26 PM</td><td>deewrewr</td><td>6/6/2023 4:38:25 PM</td></tr><tr><td>aZasaZAz</td><td>Perdida</td><td>6/6/2023 6:26:59 PM</td><td>azaasas</td><td>6/14/2023 2:16:30 PM</td></tr><tr><td>sdasdascsacsavsdf</td><td>Perdida</td><td>6/6/2023 6:39:58 PM</td><td>dasdsac</td><td>6/14/2023 2:16:27 PM</td></tr><tr><td>vehicleTest</td><td>Robo</td><td>6/14/2023 4:06:55 PM</td><td>sdsdasd</td><td>6/14/2023 4:08:03 PM</td></tr><tr><td>vehicleTest</td><td>Robo</td><td>6/14/2023 4:07:53 PM</td><td></td><td>6/14/2023 4:08:00 PM</td></tr><tr><td>sdsdsdascsac</td><td>Perdida</td><td>6/14/2023 7:22:41 PM</td><td>sdsadsacs</td><td>6/15/2023 2:05:36 PM</td></tr><tr><td>Dffss</td><td>Daños</td><td>6/19/2023 8:50:04 PM</td><td>Daños a la cama </td><td>6/19/2023 8:50:35 PM</td></tr></tbody>
+      </table>
+    </div>
+    
+    <footer>
+      <p>SISTEMA MONITOR 4 BY MANICATO GROUP</p>
+      
+      <div class="footer-container">
+        <div class="footer-info">
+          <p>tel:</p>
+          <span> (809) 373-1370</span>
+        </div>
+  
+       <div class="footer-info">
+        <p>Email:</p>
+        <span>info@manicatogroup.com</span>
+       </div>
+      </div>
+     
+
+    </footer>
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

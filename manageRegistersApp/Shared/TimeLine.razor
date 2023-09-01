@@ -1,0 +1,207 @@
+﻿@using manageRegistersApp.Data
+@using manageRegistersApp.Models
+@using MudBlazor
+@using MudBlazor.Components
+@using System.Timers
+@using manageRegistersApp.Services
+
+
+@inject IEventService EventService //
+@inject ISnackbar Snackbar
+
+
+<MudTimeline>
+    @foreach (var item in TimelineItem.timelineItems)
+    {
+        <MudTimelineItem>
+            <MudTimelineItemHeader>
+                <div class="my-timeline-header">@item.Date</div>
+            </MudTimelineItemHeader>
+            <MudTimelineItemContent>
+                <div class="my-timeline-content">@item.Description</div>
+            </MudTimelineItemContent>
+        </MudTimelineItem>
+    }
+</MudTimeline>
+
+<MudButton OnClick="() => AddTimelineItem(xd)">Agregar elemento a la línea de tiempo</MudButton>
+<MudButton OnClick="() => TimelineItem.ClearTimelineItems()">Limpiar linea de tiempo</MudButton>
+
+@code {
+    public string xd = "xd";
+
+    public class Turns
+    {
+        public int id { get; set; }
+        public string Start { get; set; } = null!;
+        public string End { get; set; } = null!;
+        public Color DotColor { get; set; } = Color.Default;
+        public Size DotSize { get; set; } = Size.Small;
+
+        public Turns(int id, string Start, string End)
+        {
+            this.id = id;
+            this.Start = Start;
+            this.End = End;
+        }
+    }
+
+    private MudTimeline timeLine { get; set; }
+    private List<MudTimelineItem> timeLineItems = new List<MudTimelineItem>();
+    List<User> usersList = new List<User>();
+
+
+    User user1 = new User();
+    User user2 = new User();
+    User user3 = new User();
+
+    Turns FirstTurn = new Turns(1, "09:45:20", "05:00:00");
+    Turns SecondTurn = new Turns(1, "09:45:30", "08:00:00");
+    Turns ThirdTurn = new Turns(1, "09:45:40", "12:00:00");
+    Turns FourTurn = new Turns(1, "09:45:50", "12:00:00");
+    Turns FiveTurn = new Turns(1, "09:46:00", "01:13:50");
+
+
+
+    private DateTime currentTime;
+    private string[]? partes;
+    private string timeNow;
+
+    MudTimelineItem newItem = new MudTimelineItem
+    {
+
+
+    };
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        EventService.NewEvent += HandleNewEvent;
+        TimeUpdate();
+        user1.Name = "Xavier";
+        user2.Name = "Laura";
+        user3.Name = "Brian";
+
+
+    }
+
+
+    public void TimeUpdate()
+    {
+
+        currentTime = DateTime.Now;
+        partes = currentTime.ToString("HH:mm:ss").Split(" ");
+        timeNow = partes[0];
+
+        Timer timer = new Timer(1000);
+        timer.Elapsed += async (sender, e) =>
+        {
+            currentTime = DateTime.Now;
+            partes = currentTime.ToString("HH:mm:ss").Split(" ");
+            timeNow = partes[0];
+            UpdateTimeLine();
+            //AddEventTimeLine();
+            await InvokeAsync(StateHasChanged);
+        };
+
+        timer.Start();
+    }
+
+    public async void UpdateTimeLine()
+    {
+
+        if (timeNow == FirstTurn.Start)
+        {
+            FirstTurn.DotColor = Color.Info;
+            FirstTurn.DotSize = Size.Large;
+            //AddTimelineItem();
+        }
+
+
+        else if (timeNow == SecondTurn.Start)
+        {
+            FirstTurn.DotColor = Color.Success;
+            FirstTurn.DotSize = Size.Small;
+            SecondTurn.DotColor = Color.Info;
+            SecondTurn.DotSize = Size.Large;
+            //AddTimelineItem();
+        }
+
+        else if (timeNow == ThirdTurn.Start)
+        {
+            SecondTurn.DotColor = Color.Success;
+            SecondTurn.DotSize = Size.Small;
+            ThirdTurn.DotColor = Color.Info;
+            ThirdTurn.DotSize = Size.Large;
+            //AddTimelineItem();
+        }
+
+        else if (timeNow == FourTurn.Start)
+        {
+            ThirdTurn.DotColor = Color.Success;
+            ThirdTurn.DotSize = Size.Small;
+            FourTurn.DotColor = Color.Info;
+            FourTurn.DotSize = Size.Large;
+            //AddTimelineItem();
+        }
+
+        else if (timeNow == FourTurn.End)
+        {
+            FourTurn.DotColor = Color.Success;
+            FourTurn.DotSize = Size.Small;
+            //AddTimelineItem();
+        }
+
+
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+
+
+
+
+    private void AddTimelineItem(string msg) //agregr elemento a la linea de tiempo
+    {
+        new TimelineItem(DateTime.Now.ToString(), msg);
+    }
+
+    public class TimelineItem
+    {
+        public string Date { get; set; }
+        public string Description { get; set; }
+
+        public static List<TimelineItem> timelineItems = new List<TimelineItem>();
+
+        public TimelineItem(string Date, string Description)
+        {
+            this.Date = Date;
+            this.Description = Description;
+
+            timelineItems.Add(this);
+        }
+
+        public static List<TimelineItem> GetTimelineItems()
+        {
+            return timelineItems;
+        }
+
+
+        public static void ClearTimelineItems()
+        {
+            timelineItems.Clear();
+        }
+        
+    }
+
+
+
+    private void HandleNewEvent(string msg)
+    {
+        AddTimelineItem(msg);
+        Snackbar.Add(msg, Severity.Success);
+
+    }
+
+}
+

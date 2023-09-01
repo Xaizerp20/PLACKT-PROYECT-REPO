@@ -1,0 +1,170 @@
+﻿@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@using manageRegistersApp.Authentication
+@using System.Net.Http.Json
+@using BCrypt.Net
+@using DataLibrary
+@using Microsoft.AspNetCore.Components.Authorization;
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager NavManager
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject IJSRuntime js
+@using System.Security.Claims
+@page "/login"
+
+<h3>Login</h3>
+
+@inject IJSRuntime JSRuntime
+<!-- Login Layout -->
+
+<div class="w-100 d-flex justify-content-center">
+    <MudPaper Class="pa-md-4 pa-lg-16 px-4 px-sm-4 px-lg-4 px-xl-8 ma-2 mx-lg-auto d-flex flex-column align-center w-50" Elevation="25" Square="true" Style="min-width: 400px">
+        <MudImage Src="https://ps.w.org/login-customizer/assets/icon-256x256.png?rev=2455454" Alt="Mony the dog" Elevation="30" Width="200" Height="200" Class="rounded-lg" />
+        <MudText Typo="Typo.h4" Class="mt-4">Log In</MudText>
+        <MudTextField @bind-Value="model.Username" Label="Username" Variant="Variant.Outlined" Class="d- mt-4" FullWidth=true Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"></MudTextField>
+        <MudTextField @bind-Value="model.Password" Label="Password" Variant="Variant.Outlined" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" Class="mt-4" FullWidth=true />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mud-theme-primary py-4 px-6 mx-4 rounded-xl mt-4" FullWidth=true @onclick=Authenticate>Iniciar Sesion</MudButton>
+        <MudText Align="Align.Start" Style="@($"color:{Theme.Palette.Primary}")" Class="mt-4 text-decoration-none align-self-end"><b><MudLink Href="#">Forgot your password?</MudLink></b></MudText>
+    </MudPaper>
+</div>
+
+
+
+@code {
+    [Parameter]
+    public string? clientName { get; set; }
+
+    private MudTheme Theme = new MudTheme();
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+    private bool isAuthenticated;
+
+    private class Model
+    {
+        public string Password { get; set; }
+        public string Username { get; set; }
+    }
+
+    void ButtonTestclick()
+    {
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    List<User> users;
+
+    private Model model = new Model();
+
+    //metodo para validar el usuario
+    private async Task Authenticate()
+    {
+        List<User> foundUsers = new List<User>();
+        List<Client> foundClient = new List<Client>();
+
+        foundUsers = await SearchUserByUserName(model.Username);
+
+        User userAccount = foundUsers.FirstOrDefault(obj => obj.Name == model.Username);
+
+        foundClient = await SearchClientByUserName(userAccount.client_id);
+
+
+        bool verifyPassword = BCrypt.Verify(model.Password, userAccount.Password); //veryfi hash password
+
+
+        if (userAccount != null && verifyPassword)
+        {
+            if (userAccount.User_State == false)
+            {
+                await js.InvokeVoidAsync("alert", "Lo Sentimos tu cuenta fue desactivada");
+            }
+            else
+            {
+                var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+                await customAuthStateProvider.UpdateAuthenticationState(new UserSession
+                    {
+                        UserId = userAccount.Id.ToString(),
+                        UserName = userAccount.Name,
+                        Role = userAccount.Role,
+                        Client_Id = foundClient.First().id.ToString(),
+                        Client_Name = foundClient.First().name
+                    });
+
+
+                var authState = await authStateProvider.GetAuthenticationStateAsync();
+                isAuthenticated = authState.User.Identity.IsAuthenticated;
+
+                var clientName = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value;
+
+                if (isAuthenticated) //comprueba si el usuario esta autenticado
+                {
+                    if (userAccount.Role == "User")
+                    {
+                        NavManager.NavigateTo($"./{clientName}/arrivals", true);
+                    }
+                    else
+                    {
+                        NavManager.NavigateTo($"./{clientName}", true);
+                    }
+
+                }
+
+             
+
+            }
+        }
+
+        else
+        {
+            await js.InvokeVoidAsync("alert", "Invalid User Name or Password");
+            return;
+        }
+
+
+    }
+
+    //busca los usuarios mediante el nombre y la password
+    public async Task<List<User>> SearchUser(string _username, string _password)
+    {
+        string sql = "SELECT * FROM users WHERE Name = @Name and Password = @Password;";
+        return await _data.LoadData<User, dynamic>(sql, new { Name = @_username, Password = @_password }, _config.GetConnectionString("default"));
+    }
+
+
+    //busca el usuario mediante el nombre de usuario
+    public async Task<List<User>> SearchUserByUserName(string _username)
+    {
+
+        string sql = "SELECT * FROM users WHERE Name = @Name;";
+
+        return await _data.LoadData<User, dynamic>(sql, new { Name = @_username}, _config.GetConnectionString("default"));
+    }
+
+
+    //busca el cliente del usuario
+    public async Task<List<Client>> SearchClientByUserName(int _id_client)
+    {
+
+        string sql = "SELECT name FROM client WHERE id = @id;";
+
+        return await _data.LoadData<Client, dynamic>(sql, new { id = @_id_client }, _config.GetConnectionString("default"));
+    }
+
+
+    public async Task ShowAlert(string msg)
+    {
+        await js.InvokeVoidAsync("alert", msg);
+    }
+}
+

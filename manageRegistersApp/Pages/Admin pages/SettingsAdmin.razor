@@ -1,0 +1,183 @@
+﻿@using manageRegistersApp.Models
+@using manageRegistersApp.Services
+@using DataLibrary
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject ClientService clientService
+
+@page "/admin/settings"
+@attribute [Authorize(Roles = "Administrator")];
+
+<h3>Settings Admin</h3>
+
+
+@if (Client.clientList == null)
+{
+    <p><em>Loading...</em></p>
+    <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+}
+else
+{
+    <MudTooltip Text="Add" Placement="Placement.Top">
+        <MudFab @onclick=OpenDialogAddClient Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+    </MudTooltip>
+    <br />
+    <MudTable Elevation="25" Items="@clientList" Filter="new Func<Client,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Clients</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Search for Users..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+              <MudTh>id</MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Client, object>(x=>x.name)">Name</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Client, object>(x=>x.creation_date)">Creation Date</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Client, object>(x=>x.contact)">Contact</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<Client, object>(x=>x.location)">Location</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="id">@context.id</MudTd>
+            <MudTd DataLabel="Name">@context.name</MudTd>
+            <MudTd DataLabel="Creation Date">@context.creation_date</MudTd>
+            <MudTd DataLabel="Contact">@context.contact</MudTd>
+            <MudTd DataLabel="Location">@context.location</MudTd>
+
+            <MudTd DataLabel="">
+                <MudFab @onclick="@(()=>EditClient(@context.id))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab @onclick="@(()=>DeleteClient(@context.id))" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+
+
+@code {
+
+    private string? searchString;
+    private Client selectedItem1 = null;
+    private List<Client> clientList = new List<Client>();
+
+
+    #region FILTERS METHODS
+
+    private bool FilterFunc1(Client element) => FilterFunc(element, searchString);
+
+    private bool FilterFunc(Client element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.name.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.creation_date.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.contact.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true; 
+        if (element.location.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        clientList = await clientService.GetClientsAsync();
+
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            clientList = await clientService.GetClientsAsync();
+        }
+
+        clientList = await clientService.GetClientsAsync();
+    }
+
+    public async Task EditClient(int id)
+    {
+
+        Client? clientFind = clientList.FirstOrDefault(obj => obj.id == id); //busca el usuario mediante el id
+
+        Client clientEdited = await OpenDialogEditClient(clientFind); //abre una caja para editar el usuario y retorna el nuevo usuario editado
+
+        if (clientEdited != null && clientEdited.id == clientFind.id) //Comprueba si se edito el usuario
+        {
+            bool updateSuccessful = await clientService.UpdateClient(clientEdited); //actualizar usuario
+
+            Snackbar.Add(updateSuccessful ? "Cliente Editado Correctamente" : "Error al Editar el Client", updateSuccessful ? Severity.Success : Severity.Error);
+        }
+        else
+        {
+            Snackbar.Add("Edicion Cancelada", Severity.Info);
+        }
+        await refreshPage();
+        StateHasChanged();
+
+    }
+
+    public void DeleteClient(int id)
+    {
+
+    }
+
+
+    //ventana para agregar cliente
+    private async Task OpenDialogAddClient()
+    {
+        var options = new DialogOptions() { NoHeader = true };
+        var dialog = await DialogService.ShowAsync<CreateClient>("Create Client", options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+
+            Snackbar.Add("Cliente agregado correctamente", Severity.Success);
+            await refreshPage();
+
+
+        }
+        else
+        {
+            Snackbar.Add("Cancelado", Severity.Info);
+
+        }
+
+        StateHasChanged();
+    }
+    
+    //ventana emergente para editar cliente
+    public async Task<Client> OpenDialogEditClient(Client editClient)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("clientEdit", editClient); //pasa el usuario a editar como parametro para el dialog
+
+        var dialog = await DialogService.ShowAsync<EditClient>("Edit Client", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            Client? client = result.Data as Client; //datos del usuario ya editado
+            return client;
+        }
+
+        else
+        {
+            return null;
+        }
+    }
+
+    public async Task refreshPage()
+    {
+        await OnInitializedAsync();
+
+    }
+
+
+
+}

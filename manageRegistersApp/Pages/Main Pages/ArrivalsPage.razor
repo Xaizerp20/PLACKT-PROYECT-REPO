@@ -1,0 +1,307 @@
+﻿@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@using manageRegistersApp.Services
+@using HtmlAgilityPack
+@using System.Net.Http.Json
+@using DataLibrary
+@using System.ComponentModel.DataAnnotations
+@using System.Net.Mail;
+@using System.Net;
+@using System.Security.Claims;
+@using Microsoft.Extensions.Logging
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject IDataAccess _data
+@inject IDialogService DialogService
+@inject IConfiguration _config
+@inject IWebHostEnvironment HostingEnvironment
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ArrivalsService arrivalsService
+@inject ClientService clientService
+@inject CommonUtilities utilities
+
+
+@page "/{clientName}/arrivals"
+@attribute [Authorize(Roles = "Administrator, Manager, User")];
+
+
+
+
+<style type="text/css">
+    .mud-table-head .header-centered th {
+        text-align: center;
+        font-size: 1.2em;
+    }
+
+    .mud-table-foot .bold-text .mud-table-cell {
+        font-weight: 500;
+    }
+</style>
+
+
+@if (arrivals == null)
+{
+    <p><em>Loading...</em></p>
+    <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <MudItem  xs="12" sm="12" md="2" Elevation="0" Class="d-flex">
+           <MudButton Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Size="Size.Large" Class="mt pa-5 w-100 h-100" FullWidth OnClick="OpenDialogAddRegister">Agregar Entrada</MudButton>
+        </MudItem>
+ 
+    
+
+    <MudItem xs="12">
+
+   
+    <MudTable Elevation="25" Items="@arrivals" Breakpoint="Breakpoint.None" Square=true HorizontalScrollbar=false>
+        <ColGroup>
+
+        </ColGroup>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<RegisterArrivals, object>(x=>x.NumberPlate)">Vehicle</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<RegisterArrivals, object>(x=>x.Room)">Room</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<RegisterArrivals, object>(x=>x.Date)">Date</MudTableSortLabel></MudTh>
+            <MudTh>Exit</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Vehicle">@context.NumberPlate</MudTd>
+            <MudTd DataLabel="Room">@context.Room</MudTd>
+            <MudTd DataLabel="Date">@context.Date.ToShortTimeString()</MudTd>
+            <MudTd DataLabel="Exit">
+                <MudButton StartIcon="@Icons.Material.Filled.ExitToApp" Variant="Variant.Filled" Color="Color.Success" Size=Size.Small OnClick="() => CheckExitButton(context.id, context.NumberPlate)">
+                    @if (success)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">Processing</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Salida</MudText>
+                    }
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+        </MudItem>
+    </MudGrid>
+}
+
+
+
+@code {
+
+    [Parameter]
+    public string? clientName { get; set; }
+    [Parameter]
+    public string? userId { get; set; }
+
+    public List<Client> ClientId = new List<Client>();
+
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+    AuthenticationState? authState;
+
+    private bool _processing = false;
+    private MudDateRangePicker DatePicker;
+    private DateRange _dateRange = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(5).Date);
+
+
+    string? uploadsFolderPath;
+    private string? searchString;
+    private List<RegisterArrivals>? arrivals; //lista de resultados del query de ingresos
+    private RegisterArrivals selectedItem1 = null;
+    private HashSet<RegisterArrivals> selectedItems = new HashSet<RegisterArrivals>();
+    private IEnumerable<RegisterArrivals> Elements = new List<RegisterArrivals>();
+    bool timerService;
+    private bool success = false;
+
+    int i = 1;
+    List<string> values = new List<string>();
+    string toDate = null!;
+    string fromDate = null!;
+
+    //carga los datos al ingresar a la pagina
+    protected override async Task OnInitializedAsync()
+    {
+        authState = await authenticationState; //estado de autentificacion
+
+        clientName = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value; //obtiene el nombre del cliente del usuario
+        userId = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+        Console.WriteLine("iD USUARIO" + userId);
+        Console.WriteLine("CLIENT NAME" + clientName);
+        await IsUrlChangeAllowed(clientName); //comprueba el acceso a los datos
+
+        arrivals = await arrivalsService.GetArrivalsToday(clientName);
+        
+ 
+    }
+
+    //metodo para comprobar si el usuario tiene accesso a la pagina
+    private async Task IsUrlChangeAllowed(string clientName)
+    {
+
+        string url = NavManager.Uri; //url actual
+        string page = (url.Split("/")[4]); //pagina
+
+        
+        if (!url.Contains(clientName))
+        {
+            // Retonar al usuario a la pagina anterior
+            NavManager.NavigateTo($"/{clientName}/{page}");
+
+            Console.WriteLine("No tienes permiso para ver el contenido");
+        }
+        else
+        {
+            Console.WriteLine(" tienes permiso para ver el contenido");
+
+        }
+
+       
+    }
+
+    //ventana emergente para crear los ingresos
+    public async Task<RegisterArrivals> OpenDialogAddRegister()
+    {
+
+        Client clientId = await clientService.GetClientIdByName(clientName); //obtiene el id del cliente
+
+
+        var parameters = new DialogParameters();
+        parameters.Add("ClientId", clientId.id);
+        parameters.Add("userId", userId);
+
+        var options = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true, NoHeader = true };
+        var dialog = await DialogService.ShowAsync<DialogCreateArrival>("", parameters, options);
+        var result = await dialog.Result;
+
+
+
+        if (!result.Canceled)
+        {
+            RegisterArrivals? arrival = result.Data as RegisterArrivals; //datos del usuario ya creado
+            await refreshPage();
+            return arrival;
+        }
+
+        else
+        {
+            return null;
+        }
+
+
+    }
+
+
+   
+
+
+    public void getDateRange()
+    {
+
+        List<string> dateListString = new List<string> { };
+
+        dateListString.Clear();
+
+        foreach (DateTime date in EachDay(_dateRange.Start.Value, _dateRange.End.Value))
+        {
+            Console.WriteLine(date.ToString("yyyy-MM-dd"));
+            dateListString.Add(date.ToShortDateString());
+        }
+
+        List<RegisterArrivals> objetosFiltrados = arrivals.Where(objeto => dateListString.Contains(objeto.Date.ToShortDateString())).ToList();
+
+        foreach (var ar in objetosFiltrados)
+        {
+            Console.WriteLine($"fecha: {ar.Date.ToShortDateString()}, matricula: {ar.NumberPlate}");
+        }
+
+        arrivals = objetosFiltrados;
+
+    }
+
+    public void DatePickerOpen()
+    {
+
+        DatePicker.Open();
+        values.Clear();
+    }
+
+    public void OnchangeDate()
+    {
+        fromDate = _dateRange.Start.Value.ToShortDateString();
+        toDate = _dateRange.End.Value.ToShortDateString();
+        Add();
+    }
+
+    public void Add() => values.Add($"From {fromDate} to {toDate}");
+
+    // Función auxiliar para generar todas las fechas dentro de un rango
+    public static IEnumerable<DateTime> EachDay(DateTime startDate, DateTime endDate)
+    {
+        for (var day = startDate.Date; day <= endDate.Date; day = day.AddDays(1))
+            yield return day;
+    }
+
+    public async Task ResetLists()
+    {
+        arrivals = await arrivalsService.GetArrivalsToday(clientName);
+    }
+    
+    //metodo para marcar las salidas
+    public async Task CheckExitButton(int id, string _NumberPlate)
+    {
+
+        success = true;
+
+        try
+        {
+
+            await QuestionIssue(_NumberPlate);
+
+            bool updateSuccessful = await arrivalsService.UpdateExitTime(id);
+
+            if (updateSuccessful)
+            {
+                success = false;
+                Snackbar.Add("Salida Marca Correctamente", Severity.Success);
+            }
+
+        }
+        catch (Exception e)
+        {
+            success = false;
+            Console.WriteLine(e.Message);
+            Snackbar.Add("Error al marcar la salida", Severity.Error);
+        }
+        await refreshPage();
+    }
+
+    //ventana emergente para crear los ingresos
+    public async Task QuestionIssue(string _NumberPlate)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("_NumberPlate", _NumberPlate); //pasa el usuario a editar como parametro para el dialog
+        //parameters.Add("OriginPage", "User");
+
+
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = DialogService.Show<DialogQuestion>("Desea Agregar un Issue?", parameters, options);
+
+        await dialog.Result;
+
+    }
+
+    public async Task refreshPage()
+    {
+        await OnInitializedAsync();
+
+    }
+
+}

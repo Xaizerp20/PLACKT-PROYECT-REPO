@@ -1,0 +1,356 @@
+﻿@using System.Security.Claims;
+@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@using manageRegistersApp.Services
+@using HtmlAgilityPack
+@using MailKit.Net.Smtp;
+@using MailKit;
+@using MimeKit;
+@using System.Net.Http.Json
+@using DataLibrary
+@using System.ComponentModel.DataAnnotations
+@using System.Net;
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject IDataAccess _data
+@inject IDialogService DialogService
+@inject IConfiguration _config
+@inject IWebHostEnvironment HostingEnvironment
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ArrivalsService arrivalsService
+@inject ClientService clientService
+@inject UserService userService
+@inject EmailsService emailService
+@inject CommonUtilities utilities
+
+@page "/{clientName}/arrivals/historical"
+@attribute [Authorize(Roles = "Administrator, Manager")];
+
+
+@if (arrivals == null)
+{
+    <p><em>Loading...</em></p>
+    <MudProgressCircular Color="Color.Primary" Size="Size.Large" Indeterminate="true" />
+}
+else
+{
+    <MudPaper Elevation="25" Square=true>
+        <MudToolBar>
+            <MudTooltip Text="Send Report" Placement="Placement.Top">
+                <MudButton Class="mx-5" Disabled="@_processing" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Info" OnClick="async ()=> {await SendEmailsEvent(arrivals);}" Size="Size.Small" Style="min-width: 135px">
+                    @if (_processing)
+                    {
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2">Processing</MudText>
+                    }
+                    else
+                    {
+                        <MudText>Send Report</MudText>
+                    }
+                </MudButton>
+            </MudTooltip>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString" Placeholder="Search for Registers..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" Immediate=true></MudTextField>
+            <MudIconButton Icon="@Icons.Material.Filled.DateRange" Color="Color.Surface" Size="Size.Medium" OnClick="DatePickerOpen" Title="Date Filter" />
+        </MudToolBar>
+    </MudPaper>
+
+
+
+    <MudDateRangePicker PickerVariant="PickerVariant.Dialog" @bind-DateRange="_dateRange" PickerOpened="ResetLists" Style="display:none" @ref=DatePicker>
+        <PickerActions>
+            <MudButton Class="mr-auto align-self-start" OnClick="@(() => DatePicker.Clear())">Clear</MudButton>
+            <MudButton OnClick="@(() => DatePicker.Close(false))">Cancel</MudButton>
+            <MudButton Color="Color.Primary" OnClick="@(() => {DatePicker.Close(); getDateRange(); OnchangeDate();})">Ok</MudButton>
+
+        </PickerActions>
+    </MudDateRangePicker>
+
+    <MudTable Elevation="25" Items="@arrivals" Filter="new Func<RegisterArrivals,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1" Breakpoint="Breakpoint.None" Square=true>
+        <ColGroup>
+            <col style="width: 15%;" />
+            <col style="width: 15%;" />
+            <col style="width: 15%;" />
+            <col style="width: 15%;" />
+            <col style="width: 15%;" />
+            <col style="width: 15%;" />
+        </ColGroup>
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Arrivals</MudText>
+            <MudSpacer />
+            <MudChipSet AllClosable="true" OnClose="Closed">
+                @foreach (var value in values)
+                {
+                    <MudChip Text="@value" Label="true">
+
+                    </MudChip>
+                }
+            </MudChipSet>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh><MudTableSortLabel SortBy="new Func<RegisterArrivals, object>(x=>x.id)">Id</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<RegisterArrivals, object>(x=>x.NumberPlate)">Vehicle Plate</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<RegisterArrivals, object>(x=>x.Room)">Room</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel InitialDirection="SortDirection.Descending" SortBy="new Func<RegisterArrivals, object>(x=>x.Date)">Date</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<RegisterArrivals, object>(x=>x.exit_time)">Exit Time</MudTableSortLabel></MudTh>
+            <MudTh><MudTableSortLabel SortBy="new Func<RegisterArrivals, object>((x)=>x.employee_id)">Registrado por</MudTableSortLabel></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Id">@context.id</MudTd>
+            <MudTd DataLabel="Vehicle Plate">@context.NumberPlate</MudTd>
+            <MudTd DataLabel="Room">@context.Room</MudTd>
+            <MudTd DataLabel="Date">@context.Date</MudTd>
+            @if (context.exit_time == null)
+            {
+                <MudTd DataLabel="Exit Time">Pendiente</MudTd>
+            }
+            else
+            {
+                <MudTd DataLabel="Exit Time">@context.exit_time</MudTd>
+            }
+            <MudTd DataLabel="Registrado por">@context.Name</MudTd>
+
+        </RowTemplate>
+    </MudTable>
+}
+
+<style>
+
+</style>
+
+
+@code {
+    [Parameter]
+    public string? clientName { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    AuthenticationState? authState;
+
+
+    private bool _processing = false;
+    private MudDateRangePicker DatePicker;
+    private DateRange _dateRange = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(5).Date);
+
+
+    string uploadsFolderPath;
+    private string? searchString;
+    private List<RegisterArrivals>? arrivals; //lista de resultados del query de ingresos
+    private RegisterArrivals selectedItem1 = null;
+    private HashSet<RegisterArrivals> selectedItems = new HashSet<RegisterArrivals>();
+    private IEnumerable<RegisterArrivals> Elements = new List<RegisterArrivals>();
+    bool timerService;
+
+
+    int i = 1;
+    List<string> values = new List<string>();
+
+
+    string toDate = null!;
+    string fromDate = null!;
+
+    //carga los datos al ingresar a la pagina
+    protected override async Task OnInitializedAsync()
+    {
+
+
+        authState = await authenticationState; //estado de autentificacion
+
+        clientName = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value; //obtiene el nombre del cliente del usuario
+
+        await IsUrlChangeAllowed(clientName); //comprueba el acceso a los datos
+
+        arrivals = await arrivalsService.GetArrivalsAsync(clientName);
+    }
+
+
+
+    //metodo para comprobar si el usuario tiene accesso a la pagina
+    private async Task IsUrlChangeAllowed(string clientName)
+    {
+
+        string url = NavManager.Uri; //url actual
+        string page = (url.Split("/")[5]); //pagina
+
+
+        if (!url.Contains(clientName))
+        {
+            // Retonar al usuario a la pagina anterior
+            NavManager.NavigateTo($"/{clientName}/arrivals/{page}");
+
+            Console.WriteLine("No tienes permiso para ver el contenido");
+        }
+        else
+        {
+            Console.WriteLine(" tienes permiso para ver el contenido");
+
+        }
+
+
+    }
+
+    //ventana emergente para crear los ingresos
+    public async Task<RegisterArrivals> OpenDialogAddRegister()
+    {
+        var options = new DialogOptions() { MaxWidth = MaxWidth.Small, FullWidth = true, NoHeader = true };
+        var dialog = await DialogService.ShowAsync<DialogCreateArrival>("", options);
+        var result = await dialog.Result;
+
+
+
+        if (!result.Canceled)
+        {
+            RegisterArrivals? arrival = result.Data as RegisterArrivals; //datos del usuario ya creado
+            await refreshPage();
+            return arrival;
+        }
+
+        else
+        {
+            return null;
+        }
+
+
+    }
+
+    #region FILTROS BUSCADOR
+
+    private bool FilterFunc1(RegisterArrivals element) => FilterFunc(element, searchString);
+
+    private bool FilterFunc(RegisterArrivals element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.Room.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.NumberPlate.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Date.ToString().Contains(searchString))
+            return true;
+        return false;
+    }
+
+    #endregion
+
+    public void Add()
+    {
+        values.Add($"From {fromDate} to {toDate}");
+    }
+
+    public async Task Closed(MudChip chip)
+    {
+        values.Remove(chip.Text);
+        await ResetLists();
+    }
+
+    public async Task SendEmailsEvent(List<RegisterArrivals> arrivalsList)
+    {
+        _processing = true;
+
+
+        string reportsFolderPath = Path.Combine(HostingEnvironment.WebRootPath, "Reports/report_hotel.html"); //Ruta del html
+        List<Email> emails = new List<Email>();
+
+        // Dirección de correo electrónico del remitente
+        string remitente = "placa4@manicatoerp.com";
+
+        #region TEST
+        // Dirección de correo electrónico del destinatario
+        //string destinatario = "xavier.jimenez@manicatogroup.com";
+        // await SendEmail(remitente, destinatario);
+        #endregion
+
+
+        Client client = await clientService.GetClientIdByName(clientName);
+        emails = await emailService.GetEmailsByIdAsync(client.id);   //busqueda de los emails por id del cliente
+
+
+        await utilities.GenerateHtmlArrivals(arrivalsList); //genera el html
+
+
+        //envia por cada email
+        emails.ForEach(async destinatario =>
+            {
+                try
+                {
+                    await utilities.SendEmail(remitente, destinatario.email, destinatario.email_name, reportsFolderPath);
+                    _processing = false;
+                    Snackbar.Add("Reporte enviado Correctamente", Severity.Success);
+                    Console.WriteLine("Reporte enviado Correctamente");
+                   
+                }
+
+                catch (Exception)
+                {
+                    _processing = false;
+                    Snackbar.Add("Error al enviar el report", Severity.Error);
+                    Console.WriteLine("Error al enviar el report");
+                    return;
+                }
+            });
+
+    }
+
+
+    #region AUXILIAR METHODS
+
+    public void getDateRange()
+    {
+
+        List<string> dateListString = new List<string> { };
+
+        dateListString.Clear();
+
+        foreach (DateTime date in EachDay(_dateRange.Start.Value, _dateRange.End.Value))
+        {
+            Console.WriteLine(date.ToString("yyyy-MM-dd"));
+            dateListString.Add(date.ToShortDateString());
+        }
+
+        List<RegisterArrivals> objetosFiltrados = arrivals.Where(objeto => dateListString.Contains(objeto.Date.ToShortDateString())).ToList();
+
+        foreach (var ar in objetosFiltrados)
+        {
+            Console.WriteLine($"fecha: {ar.Date.ToShortDateString()}, matricula: {ar.NumberPlate}");
+        }
+
+        arrivals = objetosFiltrados;
+
+    }
+
+    public void DatePickerOpen()
+    {
+
+        DatePicker.Open();
+        values.Clear();
+    }
+
+    public void OnchangeDate()
+    {
+        fromDate = _dateRange.Start.Value.ToShortDateString();
+        toDate = _dateRange.End.Value.ToShortDateString();
+        Add();
+    }
+
+    public async Task ResetLists()
+    {
+        arrivals = await arrivalsService.GetArrivalsAsync(clientName);
+    }
+
+    // Función auxiliar para generar todas las fechas dentro de un rango
+    public static IEnumerable<DateTime> EachDay(DateTime startDate, DateTime endDate)
+    {
+        for (var day = startDate.Date; day <= endDate.Date; day = day.AddDays(1))
+            yield return day;
+    }
+
+    public async Task refreshPage()
+    {
+        arrivals = await arrivalsService.GetArrivalsToday(clientName);
+
+    }
+
+    #endregion
+}

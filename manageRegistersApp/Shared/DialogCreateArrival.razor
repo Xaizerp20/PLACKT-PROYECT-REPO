@@ -1,0 +1,303 @@
+﻿@using DataLibrary;
+@using System.ComponentModel.DataAnnotations;
+@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@using manageRegistersApp.Services
+@using System.Security.Claims;
+@inject NavigationManager NavManager
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject VehicleService vehicleService
+@inject ArrivalsService arrivalsService
+@inject IssueService issueService
+
+
+<MudAppBar Color="Color.Primary" Fixed="false" Class="d-block m-0 text-center">
+    Register Arrival
+</MudAppBar>
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+
+            <MudSelect T="int" Label="Room" AnchorOrigin="Origin.BottomCenter" @bind-Value=model.NumberRoom For="@(() => model.NumberRoom)" Required>
+                @foreach (var r in roomList)
+                {
+                    <MudSelectItem Value="@(r)" />
+                }
+            </MudSelect>
+           
+            <MudTextField @bind-Value="model.NumberPlate" Label="Outlined" Variant="Variant.Outlined" Required=true></MudTextField>
+
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" FullWidth="true" Class="ml-auto mt-3" Disabled=@success>
+                @if (success)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ms-2">Processing</MudText>
+                }
+                else
+                {
+                    <MudText>Save</MudText>
+                }
+            </MudButton>
+        </EditForm>
+        @*Nested dialog*@
+        <MudDialog @bind-IsVisible="@nestedVisible">
+            <DialogContent>
+                <MudText Class="nested"> El vehiculo tiene <b> @PendingIssues.Count() Issues</b> sin resolver</MudText>
+            </DialogContent>
+            <DialogActions>
+                <MudButton Color="Color.Surface" OnClick="CloseNested" StartIcon="@Icons.Material.Filled.Cancel">Cancelar</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.DeleteForever" OnClick="ContinueRegister">Registrar Ingreso</MudButton>
+            </DialogActions>
+        </MudDialog>
+    </DialogContent>
+</MudDialog>
+
+
+
+
+
+@code {
+
+    public string? clientName { get; set; }
+
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    MudDialogInstance segundialog;
+    [Inject] private IDialogService DialogService { get; set; }
+
+    private TaskCompletionSource<bool> dialogResult;
+    bool success;
+
+    [Parameter]
+    public int ClientId { get; set; } //Id del cliente
+    [Parameter]
+    public string userId { get; set; } //Id del usuario
+
+    RegisterAccountForm model = new RegisterAccountForm();
+
+    public class RegisterAccountForm
+    {
+        [Required]
+        public string NumberPlate { get; set; } = null!;
+
+        [Required]
+        public int NumberRoom { get; set; }
+
+    }
+
+    private int[] roomList =
+    {
+        1, 2, 3, 4, 5, 6, 7
+    };
+
+    private List<Vehicle> Listvehicles = new List<Vehicle>();
+    private List<Vehicle> foundVehicle = new List<Vehicle>();
+    private List<RegisterArrivals> arrivals; //lista de resultados del query de ingresos
+    private Dictionary<string, int> vehicleOptions = new Dictionary<string, int>();
+    private List<Issue> checkIssues = new List<Issue>();
+    private IEnumerable<Issue> PendingIssues;
+
+    private bool x = false;
+    private bool shouldRegister;
+    private bool nestedVisible;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        clientName = (await authenticationState).User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value; //obtiene el nombre del cliente del usuario
+
+        Listvehicles = await vehicleService.GetVehiclesAsync();
+
+        foreach (var v in Listvehicles)
+        {
+            if (!vehicleOptions.ContainsKey(v.NumberPlate))
+            {
+                vehicleOptions.Add(v.NumberPlate, v.id);
+            }
+            else
+            {
+                continue;
+            }
+        }
+    }
+
+    //method to list vehicles saved
+    private async Task<IEnumerable<string>> SearchSavedVehicles(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+
+        // if text is null or empty, don't return values (drop-down will not open)
+        if (string.IsNullOrEmpty(value))
+        {
+            return vehicleOptions.Keys;// Si el valor es nulo o vacío, devuelve una lista vacía
+        }
+
+        return vehicleOptions.Keys.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    //method to list room saved
+    private async Task<IEnumerable<int>> SearchRoomList(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return roomList;
+        return roomList.Where(x => x.ToString().Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    //method to register new arrivals
+    public async Task RegisterArrival()
+    {
+
+        Vehicle? foundVeh = Listvehicles.Find(v => v.NumberPlate == model.NumberPlate);
+
+        List<RegisterArrivals> Listarrivals = await arrivalsService.GetArrivalsToday(clientName);
+
+        foreach (var l in Listarrivals)
+        {
+            Console.WriteLine(l.NumberPlate);
+            Console.WriteLine(l.exit_time);
+        }
+
+
+        RegisterArrivals? checkArrival = Listarrivals.Find(a => a.NumberPlate == model.NumberPlate && a.exit_time == null);
+        Console.WriteLine(ClientId);
+
+        RegisterArrivals newArrival = new RegisterArrivals
+            {
+                Room = model.NumberRoom,
+                Date = DateTime.Now,
+                client_id = ClientId,
+                employee_id = int.Parse(userId)
+
+            };
+
+
+        if (foundVeh == null || foundVeh.NumberPlate != model.NumberPlate)
+        {
+
+            Vehicle newVehicle = new Vehicle
+                {
+                    NumberPlate = model.NumberPlate
+                };
+
+
+            bool vehicleSuccess = await vehicleService.CreateVehicle(newVehicle); //crear vehiculo
+
+            //comprueva el registro del vehiculo
+            if (vehicleSuccess)
+            {
+                Listvehicles = await vehicleService.GetVehiclesAsync(); //recarga la lista de vehiculos4
+                newArrival.id_vehicle = Listvehicles.Find(v => v.NumberPlate == model.NumberPlate).id; //busca el id del vehiculo guardado
+
+                //se agrega el ingreso
+                await arrivalsService.CreateArrival(newArrival);
+                Snackbar.Add("Vehiculo y Registro Agregados Correctamente", Severity.Success);
+            }
+
+        }
+
+        else
+        {
+            checkIssues = await issueService.GetIssuesByVehicleId(vehicleOptions[model.NumberPlate]); //comprueba si el vehiculo tiene Issues pendientes
+            PendingIssues = checkIssues.Where(i => i.Status == "PENDING");
+
+            if (checkArrival == null) //comprobamos si el vehiculo ya esta dentro
+            {
+                if (PendingIssues.Count() == 0) 
+                {
+                    newArrival.id_vehicle = Listvehicles.Find(v => v.NumberPlate == model.NumberPlate).id; //busca el id del vehiculo guardado
+                    await arrivalsService.CreateArrival(newArrival);
+                    Snackbar.Add("Registro Agregado Correctamente", Severity.Success);
+                }
+                else
+                {
+                    await OpenNested(); //abre un cuadro de dialogo para confirmar
+
+                    while (x == false)
+                    {
+                        await Task.Delay(1000); // Espera infinita hasta que se establezca el resultado del diálogo
+                    }
+
+
+                    if (shouldRegister) // se hace el registro si el usuario acepta
+                    {
+                        await arrivalsService.CreateArrival(newArrival);
+                        Snackbar.Add("Registro Agregado Correctamente", Severity.Success);
+                        await Task.Delay(3000);
+
+                    }
+                    else
+                    {
+                        success = false;
+                        return;
+                    }
+
+                }
+               
+            }
+            else
+            {
+                Snackbar.Add("El vehiculo ya esta adentro", Severity.Error);
+            }
+            
+
+        }
+        StateHasChanged(); //recarga los datos en la tabla
+        MudDialog.Close();
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+        await RegisterArrival();
+    }
+
+
+    #region DIALOG METHODS
+
+    private async Task OpenNested()
+    {
+        nestedVisible = true;
+        shouldRegister = false;
+        await InvokeAsync(StateHasChanged);
+
+
+    } 
+
+    private void CloseNested()
+    {
+
+        nestedVisible = false;
+        shouldRegister = false;
+        MudDialog.CancelAll();
+        StateHasChanged();
+        x = true;
+
+    }
+
+    private async void ContinueRegister()
+    {
+        nestedVisible = false;
+        shouldRegister = true;
+        StateHasChanged();
+        x = true;
+
+    }
+
+    #endregion
+
+}
+
+

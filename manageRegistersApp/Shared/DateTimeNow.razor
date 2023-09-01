@@ -1,0 +1,22 @@
+﻿@using System.Timers
+
+<MudText>@currentDateTime</MudText>
+
+@code {
+    private string currentDateTime;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentDateTime = DateTime.Now.ToString();
+
+        Timer timer = new Timer(1000);
+        timer.Elapsed += async (sender, e) =>
+        {
+            currentDateTime = DateTime.Now.ToString();
+            await InvokeAsync(StateHasChanged);
+        };
+
+        timer.Start();
+    }
+
+}

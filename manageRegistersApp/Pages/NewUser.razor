@@ -1,0 +1,242 @@
+﻿@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@using manageRegistersApp.Services
+@using System.Net.Http.Json
+@using BCrypt.Net
+@using DataLibrary
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager NavManager
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject ISnackbar Snackbar
+@inject UserService userService
+
+@page "/admin/users/newuser"
+@attribute [Authorize(Roles = "Administrator, Manager")]
+<h3>Register Users</h3>
+
+
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="First name" HelperText="Max. 8 characters"
+                                  @bind-Value="model.Username" For="@(() => model.Username)" />
+                    <MudTextField Label="Email" Class="mt-3"
+                                  @bind-Value="model.Email" For="@(() => model.Email)" />
+                    <MudTextField Label="Password" HelperText="Choose a strong password" Class="mt-3"
+                                  @bind-Value="model.Password" For="@(() => model.Password)" InputType="InputType.Password" />
+                    <MudTextField Label="Password" HelperText="Repeat the password" Class="mt-3"
+                                  @bind-Value="model.Password2" For="@(() => model.Password2)" InputType="InputType.Password" />
+
+                    <MudSelect T="string" Label="Role" @bind-Value=model.Role AnchorOrigin="Origin.BottomCenter">
+                        <MudSelectItem Value="@("User")" />
+                        <MudSelectItem Value="@("Manager")" />
+                        @if (authState.User.IsInRole("Administrator"))
+                        {
+                            <MudSelectItem Value="@("Administrator")" />
+                        }
+                    </MudSelect>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" FullWidth="true" Class="ml-auto" Disabled=@success>
+                        @if (success)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Processing</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Save</MudText>
+                        }
+                    </MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+        <MudItem xs="12" sm="5">
+            <MudPaper Class="pa-4 mud-height-full">
+                <MudText Typo="Typo.subtitle2">Validation Summary</MudText>
+                @if (success)
+                {
+                    <MudText Color="Color.Success">Success</MudText>
+                }
+                else
+                {
+                    <MudText Color="@Color.Error">
+                        <ValidationSummary />
+                    </MudText>
+                }
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12">
+            <MudText Typo="Typo.body2" Align="Align.Center">
+                Fill out the form correctly to see the success message.
+            </MudText>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@if (listmodel == null)
+{
+    <p>Loading....</p>
+}
+else
+{
+    @foreach (var m in listmodel)
+    {
+        <p>@m.Username</p>
+        <p>@m.Password</p>
+        <p>@error</p>
+    }
+}
+
+
+
+
+@code {
+    RegisterAccountForm model = new RegisterAccountForm();
+    public static List<RegisterAccountForm> listmodel = new List<RegisterAccountForm>();
+    public List<User> users = new List<User>(); //lista de usuarios
+    bool success;
+    public string? error;
+
+    public class RegisterAccountForm
+    {
+        [Required]
+        [StringLength(20, ErrorMessage = "Name length can't be more than 8.")]
+        public string Username { get; set; } = null!;
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = null!;
+
+        [Required]
+        [StringLength(30, ErrorMessage = "Password must be at least 8 characters long.", MinimumLength = 8)]
+        public string Password { get; set; } = null!;
+
+        [Required]
+        [Compare(nameof(Password))]
+        public string Password2 { get; set; } = null!;
+
+        [Required]
+        public string Role { get; set; } = null!;
+
+    }
+
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+    private AuthenticationState authState;
+
+    //Load inital Data
+    protected override async Task OnInitializedAsync()
+    {
+        authState = await authenticationState;
+
+    }
+
+
+
+
+    private async void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+        listmodel.Add(model);
+        await RegisterUser();
+        StateHasChanged();
+    }
+
+    //method to Register User into Database
+    public async Task RegisterUser()
+    {
+        User? compareUser = new User();
+        User? compareEmail = new User();
+
+        users = await getAllUsers(); //espera la lista de usuarios
+
+        compareUser = users.Find(u => u.Name == model.Username);
+        compareEmail = users.Find(u => u.Email == model.Email);
+
+
+        // Obtener los valores ingresados por el usuario desde los campos del formulario
+        var newUser = new User
+            {
+                Name = model.Username,
+                Password = BCrypt.HashPassword(model.Password),
+                Email = model.Email,
+                Role = model.Role,
+                client_id = 1
+               
+            };
+
+
+        //comprueba si el usuario o el email no existen
+        if (compareUser == null && compareEmail == null)
+        {
+            try
+            {
+                //await AddUser();
+                await userService.CreateUser(newUser);
+                Snackbar.Add("El usuario fue registrado correctamente", Severity.Success);
+
+                await Task.Delay(2000); //esperamos 2 segundos
+                NavManager.NavigateTo("/admin/users");
+
+            }
+            catch (Exception e)
+            {
+                Snackbar.Add("Ocurrio un error durante el registro", Severity.Error);
+                Console.WriteLine(e.Message);
+                await Task.Delay(2000); //esperamos 2 segundos
+                success = false;
+                return;
+            }
+
+        }
+
+        else
+        {
+            if (compareUser != null)
+            {
+                Snackbar.Add("El usuario ya esta registrado", Severity.Error);
+            }
+
+            if (compareEmail != null)
+            {
+                Snackbar.Add("El email ya esta registrado", Severity.Error);
+            }
+
+            await Task.Delay(2000);
+            success = false;
+            return;
+        }
+    }
+
+
+    //query for register users
+    public async Task AddUser()
+    {
+
+        string passwordHash = BCrypt.HashPassword(model.Password);
+
+        string sql = "INSERT INTO users (Name, Password, Email, Role) VALUES (@name, @password, @email, @role);";
+        await _data.SaveData(sql, new { Name = model.Username, Password = passwordHash, Email = model.Email, Role = model.Role }, _config.GetConnectionString("default"));
+
+    }
+
+    public async Task<List<User>> getAllUsers()
+    {
+        string sql = "SELECT * FROM users";
+        return await _data.LoadData<User, dynamic>(sql, new { }, _config.GetConnectionString("default"));
+    }
+
+    private void ReloadPage()
+    {
+        NavManager.NavigateTo(NavManager.Uri, forceLoad: true);
+    }
+}
+
+

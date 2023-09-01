@@ -1,0 +1,65 @@
+﻿@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime js
+@using System.Security.Claims;
+@page "/{clientName}"
+
+
+<PageTitle>Index</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Hello, @context.User.Identity?.Name!</h1>
+    </Authorized>
+    <NotAuthorized>
+        <h1>Hello, Guest!</h1>
+    </NotAuthorized>
+</AuthorizeView>
+
+Welcome to your new app.
+
+<!--<SurveyPrompt Title="How is Blazor working for you?" />-->
+
+<AuthorizeView>
+    <Authorized>
+
+    </Authorized>
+</AuthorizeView>
+
+<TimeLine/>
+
+
+
+@code{
+    [Parameter]
+    public string? clientName { get; set; }
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+
+    AuthenticationState? authState;
+
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            authState = await authenticationState;
+
+            var clientName = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value;
+
+          
+            if (authState.User.Identity.IsAuthenticated)
+            {
+                NavManager.NavigateTo($"./{clientName}");
+            }
+            else
+            {
+                NavManager.NavigateTo("./login");
+            }
+        }
+    }
+
+}

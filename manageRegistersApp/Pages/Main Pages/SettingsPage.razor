@@ -1,0 +1,320 @@
+﻿@using manageRegistersApp.Models
+@using manageRegistersApp.Data
+@using DataLibrary
+@using manageRegistersApp.Services;
+@using System.Security.Claims;
+@inject IDataAccess _data
+@inject IConfiguration _config
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IWebHostEnvironment HostingEnvironment
+@inject ShiftService shiftService
+@inject ClientService clientService
+@inject EmailsService emailService
+@inject CommonUtilities utilities
+
+@page "/{clientName}/settings"
+
+
+@attribute [Authorize(Roles = "Administrator, Manager")];
+
+<h3>Settings</h3>
+
+
+<MudTooltip Text="Add" Placement="Placement.Top">
+    <MudFab @onclick=OpenDialogAddShifts Color="Color.Primary" Icon="@Icons.Material.Filled.Add" Size="Size.Small" IconSize="Size.Small" />
+</MudTooltip>
+
+<MudTable Items="@listShift" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense=true>
+    <HeaderContent>
+        <MudTh>id</MudTh>
+        <MudTh>Inicio</MudTh>
+        <MudTh>Fin</MudTh>
+        <MudTh>Horario</MudTh>
+          <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="id">@context.id</MudTd>
+        <MudTd DataLabel="Inicio">@context.Shift_Start</MudTd>
+        <MudTd DataLabel="Fin">@context.Shift_End</MudTd>
+        <MudTd DataLabel="Horario">@context.daytime</MudTd>
+         <MudTd DataLabel="">
+                <MudFab @onclick="@(()=>EditShift(@context.id))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+         </MudTd>
+    </RowTemplate>
+</MudTable>
+
+
+
+<MudTooltip Text="Add" Placement="Placement.Top">
+    <MudFab @onclick=AddEmail Color="Color.Primary" Icon="@Icons.Material.Filled.Email" Size="Size.Small" IconSize="Size.Small" />
+</MudTooltip>
+
+<MudTable Items="@listEmail" Hover="true" Breakpoint="Breakpoint.None" Loading="@_loading" LoadingProgressColor="Color.Info" Dense=true>
+    <HeaderContent>
+        <MudTh>email</MudTh>
+          <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="email">@context.email</MudTd>
+         <MudTd DataLabel="">
+                <MudFab @onclick="@(()=>EditEmail(@context.id))" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+         </MudTd>
+    </RowTemplate>
+</MudTable>
+
+<MudMessageBox @ref="mbox" Title="Add Email" CancelText="Cancel">
+    <MessageContent>
+        <MudTextField @bind-Value="EmailWrote" Label="Write Email" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField @bind-Value="emailName" Label="Write Email" Variant="Variant.Outlined"></MudTextField>
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Save</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+<MudMessageBox @ref="editShiftBox" Title="Add Email" CancelText="Cancel">
+    <MessageContent>
+         <MudTimePicker Label="Inicio" AmPm="true" @bind-Time="timeStart" />
+        <MudTimePicker Label="Fin" AmPm="true" TimeFormat="h:mm tt" @bind-Time="timeEnd" />
+        <MudSelect T="string" Label="Horario" AnchorOrigin="Origin.BottomCenter" @bind-Value=Horario>
+            <MudSelectItem Value="@("Matutino")" />
+            <MudSelectItem Value="@("Tarde")" />
+            <MudSelectItem Value="@("Noche")" />
+        </MudSelect>
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Save</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+
+
+<MudMessageBox @ref="editEmailBox" Title="Add Email" CancelText="Cancel">
+    <MessageContent>
+        <MudTextField @bind-Value="emailEdit" Label="Write Email" Variant="Variant.Outlined"></MudTextField>
+        <MudTextField @bind-Value="emailNameEdit" Label="Write Email" Variant="Variant.Outlined"></MudTextField>
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever">Save</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+
+
+@code {
+
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+    AuthenticationState? authState;
+
+    [Parameter]
+    public string? clientName { get; set; }
+
+    [Parameter]
+    public string? clientId { get; set; }
+
+    private bool _hidePosition;
+    private bool _loading;
+    private string EmailWrote;
+    private string emailName;
+    private string emailEdit;
+    private string emailNameEdit;
+
+    List<Email> listEmail = new List<Email>();
+    List<Shifts> listShift = new List<Shifts>();
+
+    MudMessageBox mbox { get; set; }
+    MudMessageBox editShiftBox { get; set; }
+    MudMessageBox editEmailBox { get; set; }
+
+
+    TimeSpan? timeStart = new TimeSpan(00, 45, 00);
+    TimeSpan? timeEnd = new TimeSpan(00, 45, 00);
+    public string Horario = null!;
+
+
+    //Load inital Data
+    protected override async Task OnInitializedAsync()
+    {
+
+        authState = await authenticationState; //estado de autentificacion
+
+        clientName = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value; //obtiene el nombre del cliente del usuario
+        clientId = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value; 
+
+        await utilities.IsUrlChangeAllowed(clientName);
+
+        listShift = await shiftService.GetShiftsAsyncById(clientName);
+        listEmail = await emailService.GetEmailsAsync(clientName);
+        // await ReadSavedEmail();
+    }
+
+
+    private async Task OpenDialogAddShifts()
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("clientId", clientId); //pasa el usuario a editar como parametro para el dialog
+
+        var dialog = await  DialogService.ShowAsync<DialogCreateShift>("Simple Dialog", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+
+            Snackbar.Add("Turno Agregado Correctamente", Severity.Success);
+            await OnInitializedAsync();
+
+
+        }
+        else
+        {
+            Snackbar.Add("Cancelado", Severity.Info);
+
+        }
+
+        StateHasChanged();
+    }
+
+
+    public async Task AddEmail()
+    {
+
+
+        bool? result = await mbox.Show();
+        string state = result == null ? "Canceled" : "Save";
+
+        Client client = await clientService.GetClientIdByName(clientName);
+
+        Email email = new() { email = EmailWrote, email_name = emailName, client_id = client.id };
+
+        if(state == "Save")
+        {
+            await emailService.CreateEmail(email);
+        }
+        else
+        {
+            return;
+        }
+
+        await refreshPage();
+        StateHasChanged();
+
+    }
+
+
+
+    //EDITAR EMAIL
+    public async Task EditEmail(int id)
+    {
+
+
+        Email? foundEmail = listEmail.Find(s => s.id == id);
+
+        emailEdit = foundEmail.email;
+        emailNameEdit = foundEmail.email_name;
+
+
+        bool? result = await editEmailBox.Show();
+
+        string state = result == null ? "Canceled" : "Save";
+
+
+        if (state != "Canceled")
+        {
+
+            if (foundEmail != null)
+            {
+
+                foundEmail.email = emailEdit;
+                foundEmail.email_name = emailNameEdit;
+
+                bool updateSuccess = await emailService.UpdateEmail(foundEmail);
+
+                Snackbar.Add(updateSuccess ? "Email actualizado correctamente" : "Error al actualizar el Email", updateSuccess ? Severity.Success : Severity.Error);
+
+            }
+
+            else
+            {
+                Console.WriteLine("No se encontro el Email a actualizar");
+                return;
+            }
+
+        }
+        else
+        {
+            Snackbar.Add("Actualizacion Cancelada", Severity.Info);
+        }
+
+
+
+        StateHasChanged();
+
+    }
+
+
+
+    //EDITAR TURNO
+    public async Task EditShift(int id)
+    {
+
+
+        Shifts? foundShift = listShift.Find(s => s.id == id);
+
+        timeStart = foundShift.Shift_Start;
+        timeEnd = foundShift.Shift_End;
+        Horario = foundShift.daytime;
+
+
+        bool? result = await editShiftBox.Show();
+
+        string state = result == null ? "Canceled" : "Save";
+
+
+        if(state != "Canceled")
+        {
+
+            foundShift.Shift_Start = (TimeSpan)timeStart;
+            foundShift.Shift_End = (TimeSpan)timeEnd;
+            foundShift.daytime = Horario;
+
+
+
+            if(foundShift != null)
+            {
+                bool updateSuccess =  await shiftService.UpdateShift(foundShift);
+
+                Snackbar.Add(updateSuccess ? "Turno actualizado correctamente" : "Error al actualizar el turno", updateSuccess ? Severity.Success: Severity.Error);
+
+            }
+
+            else
+            {
+                Console.WriteLine("No se encontro el turno a actualizar");
+                return;
+            }
+
+        }
+        else
+        {
+            Snackbar.Add("Actualizacion Cancelada", Severity.Info);
+        }
+
+
+ 
+        StateHasChanged();
+
+    }
+
+
+
+    public async Task refreshPage()
+    {
+        await OnInitializedAsync();
+
+    }
+    
+}

@@ -1,0 +1,103 @@
+﻿﻿@using manageRegistersApp.Authentication
+@using Microsoft.AspNetCore.Components
+@using System.Security.Claims;
+
+@inject NavigationManager NavManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime js
+
+<link href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" rel="stylesheet">
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Dashboard</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+
+<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column;" style="display: flex; flex-direction: column">
+
+        <AuthorizeView Roles="Manager, Administrator">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <MudNavLink Href=@($"{clientName}/arrivals") Icon=@Icons.Material.Filled.Wysiwyg IconColor="Color.Info">Arrivals</MudNavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+    
+
+        <AuthorizeView Roles="Manager, Administrator">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <MudNavGroup Title="Manager" Icon="fas fa-user-tie" IconColor="Color.Warning" Class="color" Style="color:beige">
+                        <MudNavLink Href=@($"{clientName}/arrivals/historical") Icon=@Icons.Material.Filled.Wysiwyg IconColor="Color.Info">Arrivals Historical</MudNavLink>
+                        <MudNavLink Href=@($"{clientName}/issues") Icon=@Icons.Material.Filled.Warning IconColor="Color.Error">Issues</MudNavLink>
+                      <!--  <MudNavLink Href=@($"{clientName}/vehicles") Icon=@Icons.Material.Filled.DirectionsCar IconColor="Color.Tertiary">Vehicles</MudNavLink> -->
+                        <MudNavLink Href=@($"{clientName}/settings") Icon="fas fa-cog" IconColor="Color.Secondary">Settings</MudNavLink>
+                    </MudNavGroup>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+
+        <AuthorizeView Roles="Administrator">
+            <Authorized>
+                <div class="nav-item px-3">
+                    <MudNavGroup Title="Administrator" Icon="@Icons.Material.Filled.AdminPanelSettings" IconColor="Color.Warning" Class="color" Style="color:beige">
+                       <!-- <MudNavLink Href=@($"/admin/security") Icon="fas fa-user-shield" IconColor="Color.Info">Security</MudNavLink> -->
+                        <MudNavLink Href=@($"/admin/users") Icon="fas fa-users" IconColor="Color.Success">Users</MudNavLink>
+                        <MudNavLink Href=@($"/admin/settings") Icon="fas fa-cog" IconColor="Color.Secondary">Settings</MudNavLink>
+                    </MudNavGroup>
+                </div>
+            </Authorized>
+        </AuthorizeView>
+
+        <AuthorizeView>
+            <Authorized>
+                <MudButton @onclick="Logout" StartIcon="@Icons.Material.Filled.Logout" IconColor="Color.Info" Color="Color.Info" Style="margin:auto">Logout</MudButton>
+            </Authorized>
+        </AuthorizeView>
+   
+    </nav>
+
+
+</div>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationState { get; set; }
+
+    AuthenticationState? authState;
+    string clientName = null!;
+    string clientId = null!;
+
+    private MudTheme Theme = new MudTheme();
+
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu(){
+
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        authState = await authenticationState;
+        clientName = authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.GroupSid)?.Value;
+        clientId= authState.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Sid)?.Value;
+        StateHasChanged();
+    }
+
+    private async Task Logout()
+    {
+        var customAuthStateProvider = (CustomAuthenticationStateProvider)AuthenticationStateProvider;
+        await customAuthStateProvider.UpdateAuthenticationState(null);
+        NavManager.NavigateTo("/", true);
+    }
+}

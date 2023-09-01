@@ -1,0 +1,49 @@
+﻿@using manageRegistersApp.Models;
+@inject ISnackbar Snackbar
+
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField T="string" Label="Name" @bind-Value=clientEdit.name></MudTextField>
+        <MudTextField T="string" Label="Password" @bind-Value=clientEdit.contact></MudTextField>
+        <MudTextField T="string" Label="Email" @bind-Value=clientEdit.location></MudTextField>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" StartIcon="@Icons.Material.Filled.Cancel">Cancel</MudButton>
+        <MudButton OnClick="EditUser" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+    [Parameter]
+    public Client clientEdit { get; set; } //parametro para pasar al dialog
+
+
+
+
+    protected override void OnInitialized()
+    {
+
+        base.OnInitialized();
+    }
+
+    //void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    private void Cancel() => MudDialog.Cancel();
+
+
+    private void EditUser()
+    {
+
+        MudDialog.Close(DialogResult.Ok(clientEdit)); //retorna el usuario con los datos editados
+
+    }
+
+
+}
+
+
+
