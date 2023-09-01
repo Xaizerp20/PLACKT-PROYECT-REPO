@@ -1,3 +1,3 @@
-# PLACA4
+# PLACKAT
 
-PLACA4 Sistema para la gestion de placas de vehículos para cabanas.
+PLACA4 Sistema para la gestion de placas de vehículos.
