@@ -21,7 +21,7 @@ El sistema permite tener usuarios con tres roles diferentes: administrador, Mana
 
 ## Registro de Entradas de Vehículos
 
-![Registro de Entradas de Vehículos](/App_Images/add_arrival2.jpgl)
+![Registro de Entradas de Vehículos](/App_Images/add_arrival2.jpg)
 
 - **Registro de Placas:** Los usuarios pueden registrar las placas de los vehículos que ingresan al hotel. Esto incluye información como la marca, modelo, color y detalles adicionales.
 
