@@ -144,7 +144,7 @@ namespace manageRegistersApp.Services
             listShifts = await _shiftService.GetShiftsAsync();
 
 
-
+            /*
 
             //agregamos todos los horarios a un diccionario junto con su cliente 
             foreach (Shifts shift in listShifts)
@@ -153,7 +153,7 @@ namespace manageRegistersApp.Services
                 horasEspecificas.Add(shift.Shift_End);
                 Console.WriteLine("SHIFT END:" + shift.Shift_End.ToString());
             }
-
+            */
         }
 
 

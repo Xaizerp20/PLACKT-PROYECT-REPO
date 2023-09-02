@@ -42,12 +42,13 @@ builder.Services.AddOptions();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddSession();
 
+/*
 builder.Services.AddTransient<MySqlConnection>(_ =>
 {
     var config = _.GetRequiredService<IConfiguration>();
     return new MySqlConnection(config.GetConnectionString("DefaultConnection"));
 });
-
+*/
 
 
 
