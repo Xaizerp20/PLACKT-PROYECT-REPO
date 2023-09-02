@@ -7,7 +7,16 @@ Este proyecto es una aplicación web desarrollada en C# con Blazor, diseñada pa
 
 ## Características Principales
 
-### Gestion de Usuarios
+### Inicio de Sesión
+![Gestión de Usuarios](/App_Images/LOGIN%20PAGE.jpg)
+
+Nuestra aplicación cuenta con un sólido sistema de inicio de sesión que garantiza la seguridad y la privacidad de sus datos. A continuación, se describen las características relacionadas con el inicio de sesión:
+### Acceso Seguro
+
+- **Credenciales Seguras:** Utilizamos una autenticación segura para proteger las credenciales de inicio de sesión de los usuarios. Las contraseñas se almacenan de forma segura y se transmiten de manera encriptada.
+
+
+## Gestion de Usuarios 
 ![Gestión de Usuarios](/App_Images/Edit_User.jpg)
 
 El sistema permite tener usuarios con tres roles diferentes: administrador, Manager y User Cada rol tiene diferentes permisos y capacidades dentro del sistema.
@@ -18,6 +27,7 @@ El sistema permite tener usuarios con tres roles diferentes: administrador, Mana
   
 - **Users:** Los Usuarios comunes solo pueden registrar los vehiculos que entran y salen, ademas de agregarle asuntos
 
+
 ## Registro de Entradas de Vehículos
 
 ![Registro de Entradas de Vehículos](/App_Images/add_arrival2.jpg)
@@ -25,6 +35,7 @@ El sistema permite tener usuarios con tres roles diferentes: administrador, Mana
 - **Registro de Placas:** Los usuarios pueden registrar las placas de los vehículos que ingresan al hotel. Esto incluye información como la marca, modelo, color y detalles adicionales.
 
 - **Historial de Entradas:** El sistema mantiene un historial completo de todas las entradas de vehículos, lo que permite un seguimiento detallado.
+
 
 ## Gestión de Asuntos
 
@@ -34,15 +45,18 @@ El sistema permite tener usuarios con tres roles diferentes: administrador, Mana
 
 - **Resolución de Asuntos:** Una vez resuelto un asunto, los usuarios pueden marcarlo como cerrado en el sistema.
 
+
 ## Gestión de Empresas
 
 ![Gestión de Empresas](/App_Images/Clients_page.jpg)
 
 - **Múltiples Empresas:** El sistema puede gestionar varias empresas desde un solo servidor. Cada empresa tiene sus propios registros de vehículos y asuntos, y los usuarios pueden ser asignados a una empresa específica.
 
+
 ## Aplicación Móvil
 
 También ofrecemos una versión móvil de nuestra aplicación para que pueda acceder y administrar su sistema de gestión de placas de vehículos en cualquier momento y en cualquier lugar. Nuestra aplicación móvil está disponible para dispositivos iOS y Android.
+
 
 ### Descarga la Aplicación
 
@@ -52,6 +66,7 @@ También ofrecemos una versión móvil de nuestra aplicación para que pueda acc
 ¡Lleva la gestión de placas de vehículos en hoteles en tu bolsillo con nuestra aplicación móvil!
 
 
+
 ## Requisitos del Sistema
 
 - C# y .NET Core
@@ -59,11 +74,13 @@ También ofrecemos una versión móvil de nuestra aplicación para que pueda acc
 - Base de Datos (puede ser SQL Server, MySQL, PostgreSQL, etc.)
 - Dependencias adicionales (consulte el archivo de configuración para obtener detalles específicos)
 
+
 ## Configuración y Uso
 
 1. Clone el repositorio a su servidor local.
 2. Configure la base de datos y otros parámetros en el archivo de configuración.
 3. Compile y ejecute la aplicación.
+
 
 ## Contribución
 
