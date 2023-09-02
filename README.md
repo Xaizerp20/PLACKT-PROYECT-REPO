@@ -78,9 +78,3 @@ Si desea contribuir a este proyecto, siga estos pasos:
 ## Licencia
 
 Este proyecto está bajo la licencia [Licencia MIT](LICENSE).
-
-=======
-# PLACKAT
-
-PLACA4 Sistema para la gestion de placas de vehículos.
->>>>>>> 8cc6eef588f78bfb7a877398dc5e3bcf2a15d8dc
