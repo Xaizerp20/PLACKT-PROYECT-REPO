@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # PLACKT-PROYECT
 Proyecto de Gestión de Placas de Vehículos en Hoteles con Blazor
 
